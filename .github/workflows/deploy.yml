@@ -56,7 +56,7 @@ jobs:
 
       - name: Build Go application
         run: |
-          go build -v -o ocapi ./cmd/ocapi
+          go build -v -o ocapi ./cmd/opencart
 
       - name: Deploy to server
         uses: appleboy/scp-action@master
