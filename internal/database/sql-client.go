@@ -44,7 +44,7 @@ func (s *SQLDB) Close() {
 }
 
 func (s *SQLDB) ProductSearch(model string) ([]*entity.Product, error) {
-	query := fmt.Sprintf("SELECT * FROM %sproduct WHERE model=?", s.prefix)
+	query := fmt.Sprintf("SELECT id,model,status,stock_status_id,quantity,price FROM %sproduct WHERE model=?", s.prefix)
 	rows, err := s.db.Query(query, model)
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
@@ -56,7 +56,14 @@ func (s *SQLDB) ProductSearch(model string) ([]*entity.Product, error) {
 	var products []*entity.Product
 	for rows.Next() {
 		var product entity.Product
-		if err = rows.Scan(&product); err != nil {
+		if err = rows.Scan(
+			&product.Id,
+			&product.Model,
+			&product.Status,
+			&product.StockStatusId,
+			&product.Quantity,
+			&product.Price,
+		); err != nil {
 			return nil, fmt.Errorf("failed to scan product: %w", err)
 		}
 		products = append(products, &product)
@@ -77,7 +84,7 @@ func (s *SQLDB) AddProducts(products []entity.Product) error {
 func (s *SQLDB) addProduct(product entity.Product) error {
 	// Check if the product already exists in the database by its code (uuid)
 	var productId int64
-	err := s.db.QueryRowContext(s.ctx, "SELECT product_id FROM ?product WHERE LCASE(code) = ?", s.prefix, product.UUID).Scan(&productId)
+	err := s.db.QueryRowContext(s.ctx, "SELECT product_id FROM ?product WHERE LCASE(code) = ?", s.prefix, product.Model).Scan(&productId)
 	if err != nil && err != sql.ErrNoRows {
 		return fmt.Errorf("failed to query product: %v", err)
 	}
@@ -117,7 +124,7 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 				date_modified = ? 
 			    WHERE product_id = ?`,
 			s.prefix,
-			product.UUID,
+			product.Model,
 			product.Sku,
 			product.Quantity,
 			product.Price,
@@ -135,13 +142,13 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 		}
 
 		// Update the product descriptions in different languages
-		if err := s.updateProductDescription(productId, 1, product.UUID, product.Description); err != nil {
+		if err := s.updateProductDescription(productId, 1, product.Model, product.Description); err != nil {
 			return err
 		}
-		if err := s.updateProductDescription(productId, 2, product.UUID, product.Description); err != nil {
+		if err := s.updateProductDescription(productId, 2, product.Model, product.Description); err != nil {
 			return err
 		}
-		if err := s.updateProductDescription(productId, 3, product.UUID, product.Description); err != nil {
+		if err := s.updateProductDescription(productId, 3, product.Model, product.Description); err != nil {
 			return err
 		}
 	} else {
@@ -175,7 +182,7 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 			                     date_added, 
 			                     date_modified)
 			VALUES (?, ?, ?, ?, '1', '1', ?, ?, ?, '1', ?, '0', 0, '1', ?, ?, ?, '1', ?, '9', '0', ?, ?)`,
-			product.Code, product.UUID, product.Sku, product.Quantity, product.StockStatusId, dateAvailable,
+			product.Code, product.Model, product.Sku, product.Quantity, product.StockStatusId, dateAvailable,
 			manufacturerId, product.Price, product.Length, product.Width, product.Height, product.Status,
 			nowDate, nowDate)
 		if err != nil {
@@ -189,13 +196,13 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 		}
 
 		// Insert product description in different languages
-		if err := s.insertProductDescription(productId, 1, product.UUID, product.Description); err != nil {
+		if err := s.insertProductDescription(productId, 1, product.Model, product.Description); err != nil {
 			return err
 		}
-		if err := s.insertProductDescription(productId, 2, product.UUID, product.Description); err != nil {
+		if err := s.insertProductDescription(productId, 2, product.Model, product.Description); err != nil {
 			return err
 		}
-		if err := s.insertProductDescription(productId, 3, product.UUID, product.Description); err != nil {
+		if err := s.insertProductDescription(productId, 3, product.Model, product.Description); err != nil {
 			return err
 		}
 	}
@@ -206,7 +213,7 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 	}
 
 	// Insert SEO URL
-	seoURL := s.TransLit(product.UUID)
+	seoURL := s.TransLit(product.Model)
 	seoURL = s.MetaURL(seoURL)
 	seoURL = fmt.Sprintf("%s", seoURL)
 	_, err = s.db.ExecContext(s.ctx, `
