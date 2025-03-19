@@ -8,7 +8,7 @@ import (
 )
 
 type Repository interface {
-	GetUser(token string) (*entity.User, error)
+	ProductSearch(model string) ([]*entity.Product, error)
 }
 
 type MessageService interface {
@@ -16,15 +16,24 @@ type MessageService interface {
 }
 
 type Core struct {
-	repo Repository
-	ms   MessageService
-	log  *slog.Logger
+	repo    Repository
+	ms      MessageService
+	authKey string
+	log     *slog.Logger
 }
 
-func New(repo Repository, log *slog.Logger) *Core {
+func (c *Core) FindModel(model string) ([]*entity.Product, error) {
+	if c.repo == nil {
+		return nil, fmt.Errorf("repository not initialized")
+	}
+	return c.repo.ProductSearch(model)
+}
+
+func New(repo Repository, key string, log *slog.Logger) *Core {
 	return &Core{
-		repo: repo,
-		log:  log.With(sl.Module("core")),
+		repo:    repo,
+		authKey: key,
+		log:     log.With(sl.Module("core")),
 	}
 }
 
@@ -47,15 +56,10 @@ func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
 	if token == "" {
 		return nil, fmt.Errorf("token not provided")
 	}
-	if c.repo == nil {
-		return nil, fmt.Errorf("repository not initialized")
+	if c.authKey == token {
+		return &entity.User{
+			Username: "internal",
+		}, nil
 	}
-	user, err := c.repo.GetUser(token)
-	if err != nil {
-		c.log.With(sl.Secret("token", token)).Error("read user data", sl.Err(err))
-	}
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
-	}
-	return user, nil
+	return nil, fmt.Errorf("invalid token")
 }

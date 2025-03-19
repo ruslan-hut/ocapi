@@ -28,6 +28,10 @@ func NewSQLClient(conf *config.Config) (*SQLDB, error) {
 		return nil, fmt.Errorf("sql connect error: %w", err)
 	}
 
+	if err = db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
 	return &SQLDB{
 		db:     db,
 		ctx:    context.Background(),
@@ -36,19 +40,27 @@ func NewSQLClient(conf *config.Config) (*SQLDB, error) {
 }
 
 func (s *SQLDB) Close() {
-	s.db.Close()
+	_ = s.db.Close()
 }
 
-func (s *SQLDB) GetProduct(uuid string) (entity.Product, error) {
-	var product entity.Product
-	err := s.db.QueryRowContext(s.ctx, `
-		SELECT * FROM ?product WHERE LCASE(code) = ?`,
-		s.prefix, uuid).Scan(&product)
+func (s *SQLDB) ProductSearch(model string) ([]*entity.Product, error) {
+	rows, err := s.db.Query("SELECT * FROM ?product WHERE model=?", s.prefix, model)
 	if err != nil {
-		return entity.Product{}, fmt.Errorf("failed to get product: %w", err)
+		return nil, fmt.Errorf("query failed: %w", err)
 	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
-	return product, nil
+	var products []*entity.Product
+	for rows.Next() {
+		var product entity.Product
+		if err = rows.Scan(&product); err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+		products = append(products, &product)
+	}
+	return products, nil
 }
 
 func (s *SQLDB) AddProducts(products []entity.Product) error {

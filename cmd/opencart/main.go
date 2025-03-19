@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log/slog"
 	"ocapi/impl/core"
-	"ocapi/impl/telegram"
 	"ocapi/internal/config"
 	"ocapi/internal/database"
 	"ocapi/internal/http-server/api"
@@ -24,33 +23,34 @@ func main() {
 	lg.Info("starting ocapi", slog.String("config", *configPath), slog.String("env", conf.Env))
 	lg.Debug("debug messages enabled")
 
-	mongo, err := database.NewMongoClient(conf)
+	db, err := database.NewSQLClient(conf)
 	if err != nil {
-		lg.Error("mongo client", sl.Err(err))
+		lg.Error("mysql client", sl.Err(err))
 	}
-	if mongo != nil {
-		lg.Info("mongo client initialized",
-			slog.String("host", conf.Mongo.Host),
-			slog.String("port", conf.Mongo.Port),
-			slog.String("user", conf.Mongo.User),
-			slog.String("database", conf.Mongo.Database),
+	if db != nil {
+		lg.Info("mysql client initialized",
+			slog.String("host", conf.SQL.HostName),
+			slog.String("port", conf.SQL.Port),
+			slog.String("user", conf.SQL.UserName),
+			slog.String("database", conf.SQL.Database),
 		)
+		defer db.Close()
 	}
 
-	handler := core.New(mongo, lg)
+	handler := core.New(db, conf.Listen.ApiKey, lg)
 
-	if conf.Telegram.Enabled {
-		tg, e := telegram.New(conf.Telegram.ApiKey, lg)
-		if e != nil {
-			lg.Error("telegram api", sl.Err(e))
-		}
-		if mongo != nil {
-			tg.SetDatabase(mongo)
-		}
-		tg.Start()
-		lg.Info("telegram api initialized")
-		handler.SetMessageService(tg)
-	}
+	//if conf.Telegram.Enabled {
+	//	tg, e := telegram.New(conf.Telegram.ApiKey, lg)
+	//	if e != nil {
+	//		lg.Error("telegram api", sl.Err(e))
+	//	}
+	//	//if mongo != nil {
+	//	//	tg.SetDatabase(mongo)
+	//	//}
+	//	tg.Start()
+	//	lg.Info("telegram api initialized")
+	//	handler.SetMessageService(tg)
+	//}
 
 	// *** blocking start with http server ***
 	err = api.New(conf, lg, handler)

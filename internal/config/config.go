@@ -12,15 +12,8 @@ type Config struct {
 	Listen struct {
 		BindIP string `yaml:"bind_ip" env-default:"127.0.0.1"`
 		Port   string `yaml:"port" env-default:"9800"`
+		ApiKey string `yaml:"key" env-default:""`
 	} `yaml:"listen"`
-	Mongo struct {
-		Enabled  bool   `yaml:"enabled" env-default:"false"`
-		Host     string `yaml:"host" env-default:"127.0.0.1"`
-		Port     string `yaml:"port" env-default:"27017"`
-		User     string `yaml:"user" env-default:"admin"`
-		Password string `yaml:"password" env-default:"pass"`
-		Database string `yaml:"database" env-default:""`
-	} `yaml:"mongo"`
 	SQL struct {
 		Enabled  bool   `yaml:"enabled" env-default:"false"`
 		Driver   string `yaml:"driver" env-default:"mysql"`

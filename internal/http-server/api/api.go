@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"ocapi/internal/config"
+	"ocapi/internal/http-server/handlers/product"
 	"ocapi/internal/http-server/handlers/service"
 	"ocapi/internal/http-server/middleware/authenticate"
 	"ocapi/internal/http-server/middleware/timeout"
@@ -24,6 +25,7 @@ type Server struct {
 type Handler interface {
 	authenticate.Authenticate
 	service.Service
+	product.Core
 }
 
 func New(conf *config.Config, log *slog.Logger, handler Handler) error {
@@ -38,17 +40,15 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Recoverer)
 	router.Use(render.SetContentType(render.ContentTypeJSON))
-
-	//router.Use(logger.New(log))
 	router.Use(authenticate.New(log, handler))
 
-	router.Route("/mail", func(r chi.Router) {
-		r.Post("/test", service.SendTestMail(log, handler))
+	router.Route("/product", func(r chi.Router) {
+		r.Get("/model/{model}", product.ModelSearch(log, handler))
 	})
 
-	router.Route("/tg", func(r chi.Router) {
-		r.Post("/test", service.SendTestEvent(log, handler))
-	})
+	//router.Route("/tg", func(r chi.Router) {
+	//	r.Post("/test", service.SendTestEvent(log, handler))
+	//})
 
 	httpLog := slog.NewLogLogger(log.Handler(), slog.LevelError)
 	server.httpServer = &http.Server{
