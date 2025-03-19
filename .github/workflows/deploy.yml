@@ -28,7 +28,7 @@ jobs:
           sed -i 's|${SQL_PREFIX}|'"$SQL_PREFIX"'|g' ocapi-config.yml
           sed -i 's|${TELEGRAM_API_KEY}|'"$TELEGRAM_API_KEY"'|g' ocapi-config.yml
         env:
-          LOG_ENV: ${{ vars.ENV }}
+          LOG_ENV: ${{ vars.LOG_ENV }}
           LISTEN_PORT: ${{ vars.LISTEN_PORT }}
           API_KEY: ${{ secrets.API_KEY }}
           SQL_DRIVER: ${{ vars.SQL_DRIVER }}
