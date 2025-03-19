@@ -7,13 +7,13 @@ listen:
   key: ${API_KEY}
 sql:
   enabled: true
-  driver: &{SQL_DRIVER}
-  hostname: &{SQL_HOSTNAME}
-  username: &{SQL_USERNAME}
-  password: &{SQL_PASSWORD}
-  database: &{SQL_DATABASE}
-  port: &{SQL_PORT}
-  prefix: &{SQL_PREFIX}
+  driver: ${SQL_DRIVER}
+  hostname: ${SQL_HOSTNAME}
+  username: ${SQL_USERNAME}
+  password: ${SQL_PASSWORD}
+  database: ${SQL_DATABASE}
+  port: ${SQL_PORT}
+  prefix: ${SQL_PREFIX}
 telegram:
   enabled: true
   api_key: ${TELEGRAM_API_KEY}
