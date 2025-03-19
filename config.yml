@@ -1,0 +1,16 @@
+---
+
+env: local
+listen:
+  bind_ip: 127.0.0.1
+  port: 9800
+mongo:
+  enabled: false
+  host: 127.0.0.1
+  port: 27017
+  user: postman
+  password: pass
+  database: evsys
+telegram:
+  enabled: false
+  api_key: telegram-api-key

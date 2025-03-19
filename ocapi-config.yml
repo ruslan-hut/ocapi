@@ -1,0 +1,16 @@
+---
+
+env: ${LOG_ENV}
+listen:
+  bind_ip: 127.0.0.1
+  port: ${LISTEN_PORT}
+mongo:
+  enabled: true
+  host: ${MONGO_HOST}
+  port: ${MONGO_PORT}
+  user: ${MONGO_USER}
+  password: ${MONGO_PASSWORD}
+  database: ${MONGO_DATABASE}
+telegram:
+  enabled: true
+  api_key: ${TELEGRAM_API_KEY}
