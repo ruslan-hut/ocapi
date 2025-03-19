@@ -44,7 +44,7 @@ func (s *SQLDB) Close() {
 }
 
 func (s *SQLDB) ProductSearch(model string) ([]*entity.Product, error) {
-	query := fmt.Sprintf("SELECT id,model,status,stock_status_id,quantity,price FROM %sproduct WHERE model=?", s.prefix)
+	query := fmt.Sprintf("SELECT product_id,model,status,stock_status_id,quantity,price FROM %sproduct WHERE model=?", s.prefix)
 	rows, err := s.db.Query(query, model)
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)

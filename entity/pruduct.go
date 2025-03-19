@@ -7,7 +7,7 @@ import (
 )
 
 type Product struct {
-	Id             int64              `json:"id" bson:"id" validate:"omitempty"`
+	Id             int64              `json:"product_id" bson:"product_id" validate:"omitempty"`
 	Model          string             `json:"model" bson:"model" validate:"omitempty"`
 	Sku            string             `json:"sku" bson:"sku" validate:"omitempty"`
 	Upc            string             `json:"upc" bson:"upc" validate:"omitempty"`
