@@ -21,6 +21,16 @@ type Config struct {
 		Password string `yaml:"password" env-default:"pass"`
 		Database string `yaml:"database" env-default:""`
 	} `yaml:"mongo"`
+	SQL struct {
+		Enabled  bool   `yaml:"enabled" env-default:"false"`
+		Driver   string `yaml:"driver" env-default:"mysql"`
+		HostName string `yaml:"hostname" env-default:"localhost"`
+		UserName string `yaml:"username" env-default:"root"`
+		Password string `yaml:"password" env-default:""`
+		Database string `yaml:"database" env-default:""`
+		Port     string `yaml:"port" env-default:"8080"`
+		Prefix   string `yaml:"prefix" env-default:""`
+	} `yaml:"sql"`
 	Telegram struct {
 		Enabled bool   `yaml:"enabled" env-default:"false"`
 		ApiKey  string `yaml:"api_key" env-default:""`

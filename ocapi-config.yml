@@ -11,6 +11,15 @@ mongo:
   user: ${MONGO_USER}
   password: ${MONGO_PASSWORD}
   database: ${MONGO_DATABASE}
+sql:
+  enabled: true
+  driver: &{SQL_DRIVER}
+  hostname: &{SQL_HOSTNAME}
+  username: &{SQL_USERNAME}
+  password: &{SQL_PASSWORD}
+  database: &{SQL_DATABASE}
+  port: &{SQL_PORT}
+  prefix: &{SQL_PREFIX}
 telegram:
   enabled: true
   api_key: ${TELEGRAM_API_KEY}

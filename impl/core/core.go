@@ -3,8 +3,8 @@ package core
 import (
 	"fmt"
 	"log/slog"
-	"mittere/entity"
-	"mittere/internal/lib/sl"
+	"ocapi/entity"
+	"ocapi/internal/lib/sl"
 )
 
 type Repository interface {

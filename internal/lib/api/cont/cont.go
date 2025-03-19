@@ -2,7 +2,7 @@ package cont
 
 import (
 	"context"
-	"mittere/entity"
+	"ocapi/entity"
 )
 
 type ctxKey string

@@ -21,7 +21,7 @@ func main() {
 	conf := config.MustLoad(*configPath)
 	lg := logger.SetupLogger(conf.Env, *logPath)
 
-	lg.Info("starting mittere", slog.String("config", *configPath), slog.String("env", conf.Env))
+	lg.Info("starting ocapi", slog.String("config", *configPath), slog.String("env", conf.Env))
 	lg.Debug("debug messages enabled")
 
 	mongo, err := database.NewMongoClient(conf)

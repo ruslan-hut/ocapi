@@ -1,8 +1,8 @@
 package entity
 
 import (
-	"mittere/internal/lib/validate"
 	"net/http"
+	"ocapi/internal/lib/validate"
 	"time"
 )
 

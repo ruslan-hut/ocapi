@@ -16,14 +16,21 @@ jobs:
 
       - name: Prepare configuration file
         run: |
-          sed -i 's|${LOG_ENV}|'"$LOG_ENV"'|g' mittere-config.yml
-          sed -i 's|${LISTEN_PORT}|'"$LISTEN_PORT"'|g' mittere-config.yml
-          sed -i 's|${MONGO_HOST}|'"$MONGO_HOST"'|g' mittere-config.yml
-          sed -i 's|${MONGO_PORT}|'"$MONGO_PORT"'|g' mittere-config.yml
-          sed -i 's|${MONGO_USER}|'"$MONGO_USER"'|g' mittere-config.yml
-          sed -i 's|${MONGO_PASSWORD}|'"$MONGO_PASSWORD"'|g' mittere-config.yml
-          sed -i 's|${MONGO_DATABASE}|'"$MONGO_DATABASE"'|g' mittere-config.yml
-          sed -i 's|${TELEGRAM_API_KEY}|'"$TELEGRAM_API_KEY"'|g' mittere-config.yml
+          sed -i 's|${LOG_ENV}|'"$LOG_ENV"'|g' ocapi-config.yml
+          sed -i 's|${LISTEN_PORT}|'"$LISTEN_PORT"'|g' ocapi-config.yml
+          sed -i 's|${MONGO_HOST}|'"$MONGO_HOST"'|g' ocapi-config.yml
+          sed -i 's|${MONGO_PORT}|'"$MONGO_PORT"'|g' ocapi-config.yml
+          sed -i 's|${MONGO_USER}|'"$MONGO_USER"'|g' ocapi-config.yml
+          sed -i 's|${MONGO_PASSWORD}|'"$MONGO_PASSWORD"'|g' ocapi-config.yml
+          sed -i 's|${MONGO_DATABASE}|'"$MONGO_DATABASE"'|g' ocapi-config.yml
+          sed -i 's|${SQL_DRIVER}|'"SQL_DRIVER"'|g' ocapi-config.yml
+          sed -i 's|${SQL_HOSTNAME}|'"SQL_HOSTNAME"'|g' ocapi-config.yml
+          sed -i 's|${SQL_USERNAME}|'"SQL_USERNAME"'|g' ocapi-config.yml
+          sed -i 's|${SQL_PASSWORD}|'"SQL_PASSWORD"'|g' ocapi-config.yml
+          sed -i 's|${SQL_DATABASE}|'"SQL_DATABASE"'|g' ocapi-config.yml
+          sed -i 's|${SQL_PORT}|'"SQL_PORT"'|g' ocapi-config.yml
+          sed -i 's|${SQL_PREFIX}|'"SQL_PREFIX"'|g' ocapi-config.yml
+          sed -i 's|${TELEGRAM_API_KEY}|'"$TELEGRAM_API_KEY"'|g' ocapi-config.yml
         env:
           LOG_ENV: ${{ vars.ENV }}
           LISTEN_PORT: ${{ vars.LISTEN_PORT }}
@@ -32,6 +39,13 @@ jobs:
           MONGO_USER: ${{ vars.MONGO_USER }}
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           MONGO_DATABASE: ${{ vars.MONGO_DATABASE }}
+          SQL_DRIVER: ${{ vars.SQL_DRIVER }}
+          SQL_HOSTNAME: ${{ vars.SQL_HOSTNAME }}
+          SQL_USERNAME: ${{ vars.SQL_USERNAME }}
+          SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+          SQL_DATABASE: ${{ vars.SQL_DATABASE }}
+          SQL_PORT: ${{ vars.SQL_PORT }}
+          SQL_PREFIX: ${{ vars.SQL_PREFIX }}
           TELEGRAM_API_KEY: ${{ secrets.TELEGRAM_API_KEY }}
 
       - name: Copy Configuration to Server
@@ -50,7 +64,7 @@ jobs:
 
       - name: Build Go application
         run: |
-          go build -v -o mittere ./cmd/mittere
+          go build -v -o ocapi ./cmd/ocapi
 
       - name: Deploy to server
         uses: appleboy/scp-action@master
@@ -59,7 +73,7 @@ jobs:
           username: ${{ secrets.DEV_SERVER_USER }}
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
           port: 22
-          source: "mittere"
+          source: "ocapi"
           target: "/usr/local/bin/"
 
       - name: Restart Application
@@ -70,4 +84,4 @@ jobs:
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            systemctl restart mittere.service 
+            systemctl restart ocapi.service 

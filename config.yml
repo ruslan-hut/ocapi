@@ -11,6 +11,15 @@ mongo:
   user: postman
   password: pass
   database: evsys
+sql:
+  enabled: false
+  driver: mysqli
+  hostname: localhost
+  username: username
+  password: password
+  database: db
+  port: 8080
+  prefix: prefix_
 telegram:
   enabled: false
   api_key: telegram-api-key

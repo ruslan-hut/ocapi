@@ -4,8 +4,8 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"log/slog"
-	"mittere/entity"
-	"mittere/internal/lib/sl"
+	"ocapi/entity"
+	"ocapi/internal/lib/sl"
 )
 
 type Repository interface {

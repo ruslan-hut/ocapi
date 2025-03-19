@@ -3,8 +3,8 @@ package telegram
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"mittere/entity"
-	"mittere/internal/lib/sl"
+	"ocapi/entity"
+	"ocapi/internal/lib/sl"
 )
 
 func (b *TgBot) subscribe(update *tgbotapi.Update) string {

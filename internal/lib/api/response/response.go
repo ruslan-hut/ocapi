@@ -1,6 +1,6 @@
 package response
 
-import "mittere/internal/lib/clock"
+import "ocapi/internal/lib/clock"
 
 type Response struct {
 	Data          interface{} `json:"data,omitempty"`
