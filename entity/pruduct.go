@@ -14,12 +14,12 @@ type Product struct {
 	Isbn           string    `json:"isbn,omitempty" bson:"isbn" validate:"omitempty"`
 	Mpn            string    `json:"mpn,omitempty" bson:"mpn" validate:"omitempty"`
 	Location       string    `json:"location,omitempty" bson:"location" validate:"omitempty"`
-	Quantity       int       `json:"quantity,omitempty" bson:"quantity" validate:"omitempty"`
-	StockStatusId  int       `json:"stock_status_id,omitempty" bson:"stock_status_id" validate:"omitempty"`
+	Quantity       int       `json:"quantity" bson:"quantity" validate:"omitempty"`
+	StockStatusId  int       `json:"stock_status_id" bson:"stock_status_id" validate:"omitempty"`
 	Image          string    `json:"image,omitempty" bson:"image" validate:"omitempty"`
-	ManufacturerId int64     `json:"manufacturer_id,omitempty" bson:"manufacturer_id" validate:"omitempty"`
+	ManufacturerId int64     `json:"manufacturer_id" bson:"manufacturer_id" validate:"omitempty"`
 	Shipping       int       `json:"shipping,omitempty" bson:"shipping" validate:"omitempty"`
-	Price          float32   `json:"price,omitempty" bson:"price" validate:"omitempty"`
+	Price          float32   `json:"price" bson:"price" validate:"omitempty"`
 	Points         int       `json:"points,omitempty" bson:"points" validate:"omitempty"`
 	TaxClassId     int       `json:"tax_class_id,omitempty" bson:"tax_class_id" validate:"omitempty"`
 	DateAvailable  time.Time `json:"date_available,omitempty" bson:"date_available" validate:"omitempty"`
@@ -32,7 +32,7 @@ type Product struct {
 	Subtract       int       `json:"subtract,omitempty" bson:"subtract" validate:"omitempty"`
 	Minimum        int       `json:"minimum,omitempty" bson:"minimum" validate:"omitempty"`
 	SortOrder      int       `json:"sort_order,omitempty" bson:"sort_order" validate:"omitempty"`
-	Status         int       `json:"status,omitempty" bson:"status" validate:"omitempty"`
+	Status         int       `json:"status" bson:"status" validate:"omitempty"`
 	DateAdded      time.Time `json:"date_added,omitempty" bson:"date_added" validate:"omitempty"`
 	DateModified   time.Time `json:"date_modified,omitempty" bson:"date_modified" validate:"omitempty"`
 	Viewed         int       `json:"viewed,omitempty" bson:"viewed" validate:"omitempty"`
