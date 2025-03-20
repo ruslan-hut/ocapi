@@ -17,7 +17,7 @@ type Product struct {
 	Quantity       int       `json:"quantity,omitempty" bson:"quantity" validate:"omitempty"`
 	StockStatusId  int       `json:"stock_status_id,omitempty" bson:"stock_status_id" validate:"omitempty"`
 	Image          string    `json:"image,omitempty" bson:"image" validate:"omitempty"`
-	ManufacturerId int       `json:"manufacturer_id,omitempty" bson:"manufacturer_id" validate:"omitempty"`
+	ManufacturerId int64     `json:"manufacturer_id,omitempty" bson:"manufacturer_id" validate:"omitempty"`
 	Shipping       int       `json:"shipping,omitempty" bson:"shipping" validate:"omitempty"`
 	Price          float32   `json:"price,omitempty" bson:"price" validate:"omitempty"`
 	Points         int       `json:"points,omitempty" bson:"points" validate:"omitempty"`
@@ -50,14 +50,14 @@ func ProductFromProductData(product *ProductData) *Product {
 	}
 
 	return &Product{
-		Model:          product.UID,
+		Model:          product.Uid,
 		Sku:            product.Article,
 		Quantity:       product.Quantity,
 		Minimum:        1,
 		Subtract:       1,
 		StockStatusId:  stockStatusId,
 		DateAvailable:  time.Now().AddDate(0, 0, -3),
-		ManufacturerId: product.ManufacturerUID,
+		ManufacturerId: 0,
 		Shipping:       1,
 		Price:          product.Price,
 		Points:         0,
@@ -71,6 +71,6 @@ func ProductFromProductData(product *ProductData) *Product {
 		TaxClassId:     9,
 		SortOrder:      0,
 		DateAdded:      time.Now(),
-		DateModified:   time.Now(),
+		//DateModified:   time.Now(),
 	}
 }

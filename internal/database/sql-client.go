@@ -49,6 +49,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 					stock_status_id,
 					quantity,
 					price,
+					manufacturer_id,
 					date_modified 
 				FROM %sproduct 
 				WHERE model=?`,
@@ -72,6 +73,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 			&product.StockStatusId,
 			&product.Quantity,
 			&product.Price,
+			&product.ManufacturerId,
 			&product.DateModified,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan product: %w", err)
@@ -82,22 +84,20 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 }
 
 func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
-	var err error
-	var products []*entity.Product
 	for _, productData := range productsData {
-		products, err = s.ProductSearch(productData.UID)
+		productId, err := s.getProductByUID(productData.Uid)
 		if err != nil {
 			return fmt.Errorf("product search failed: %v", err)
 		}
 
-		if products == nil {
+		if productId == 0 {
 			err = s.addProduct(productData)
 		} else {
-			err = s.updateProduct(productData)
+			err = s.updateProduct(productId, productData)
 		}
 
 		if err != nil {
-			return fmt.Errorf("product %s failed: %v", productData.UID, err)
+			return fmt.Errorf("save product %s: %v", productData.Uid, err)
 		}
 	}
 	return nil
@@ -154,7 +154,15 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
-func (s *MySql) updateProduct(product *entity.ProductData) error {
+func (s *MySql) updateProduct(productId int64, product *entity.ProductData) error {
+	manufacturerId, err := s.getManufacturerId(product.Manufacturer)
+	if err != nil {
+		return fmt.Errorf("manufacturer search failed: %v", err)
+	}
+	var status = 0
+	if product.Active {
+		status = 1
+	}
 	query := fmt.Sprintf(
 		`UPDATE %sproduct SET
 				sku = ?, 
@@ -167,26 +175,21 @@ func (s *MySql) updateProduct(product *entity.ProductData) error {
 		s.prefix,
 	)
 
-	var status = 0
-	if product.Active {
-		status = 1
-	}
-
 	res, err := s.db.Exec(query,
 		product.Article,
 		product.Quantity,
 		product.Price,
-		product.ManufacturerUID,
+		manufacturerId,
 		status,
 		time.Now(),
-		product.UID)
+		productId)
 	if err != nil {
 		return fmt.Errorf("failed to update product: %v", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()
 	if rowsAffected == 0 {
-		return fmt.Errorf("product %s not found", product.UID)
+		return fmt.Errorf("product %s not found", product.Uid)
 	}
 	return nil
 }
@@ -194,6 +197,12 @@ func (s *MySql) updateProduct(product *entity.ProductData) error {
 func (s *MySql) addProduct(productData *entity.ProductData) error {
 
 	product := entity.ProductFromProductData(productData)
+
+	manufacturerId, err := s.getProductByUID(productData.Manufacturer)
+	if err != nil {
+		return fmt.Errorf("manufacturer search failed: %v", err)
+	}
+	product.ManufacturerId = manufacturerId
 
 	query := fmt.Sprintf(
 		`INSERT INTO %sproduct (
@@ -558,8 +567,8 @@ func (s *MySql) addProductToCategory(product *entity.ProductData) error {
 		s.prefix)
 
 	_, err := s.db.Exec(query,
-		product.UID,
-		product.CategoryUID)
+		product.Uid,
+		product.CategoryUid)
 
 	if err != nil {
 		return fmt.Errorf("product to category insert: %v", err)
@@ -613,6 +622,51 @@ func (s *MySql) addCategoryUIDToCategory() error {
 	}
 
 	return nil
+}
+
+func (s *MySql) getManufacturerId(name string) (int64, error) {
+	if name == "" {
+		return 0, nil
+	}
+	query := fmt.Sprintf(
+		`SELECT
+					manufacturer_id
+				FROM %smanufacturer 
+				WHERE name=?
+				LIMIT 1`,
+		s.prefix,
+	)
+	rows, err := s.db.Query(query, name)
+	if err != nil {
+		return 0, fmt.Errorf("query failed: %w", err)
+	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+
+	for rows.Next() {
+		var manufacturerId int64
+		if err = rows.Scan(manufacturerId); err != nil {
+			return 0, err
+		}
+		return manufacturerId, nil
+	}
+
+	query = fmt.Sprintf(`INSERT INTO %smanufacturer (name) VALUES (?)`, s.prefix)
+	res, err := s.db.Exec(query, name)
+	if err != nil {
+		return 0, fmt.Errorf("insert manufacturer: %w", err)
+	}
+
+	manufacturerId, _ := res.LastInsertId()
+
+	query = fmt.Sprintf(`INSERT INTO %smanufacturer_to_store (manufacturer_id,Store_id) VALUES (?,0)`, s.prefix)
+	res, err = s.db.Exec(query, name)
+	if err != nil {
+		return 0, fmt.Errorf("insert manufacturer to store: %w", err)
+	}
+
+	return manufacturerId, nil
 }
 
 // Placeholder for the TransLit function
