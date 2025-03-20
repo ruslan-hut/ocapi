@@ -6,10 +6,10 @@ import (
 )
 
 type ProductDescription struct {
-	ProductId   string  `json:"product_id" validate:"required"`
-	LanguageId  string  `json:"language_id,omitempty"`
-	Name        float32 `json:"name,omitempty"`
-	Description int     `json:"description,omitempty"`
+	ProductUid  string `json:"product_uid" validate:"required"`
+	LanguageId  int    `json:"language_id,omitempty" validate:"required"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 func (p *ProductDescription) Bind(_ *http.Request) error {

@@ -6,8 +6,8 @@ import (
 )
 
 type CategoryDescriptionData struct {
-	CategoryId  int64  `json:"category_id,omitempty"`
-	LanguageId  int64  `json:"language_id,omitempty"`
+	CategoryUid string `json:"category_uid" validate:"required"`
+	LanguageId  int64  `json:"language_id" validate:"required"`
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 }

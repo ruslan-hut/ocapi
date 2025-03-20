@@ -74,9 +74,3 @@ func ProductFromProductData(product *ProductData) *Product {
 		DateModified:   time.Now(),
 	}
 }
-
-//model, sku, price quantity manufacturer, status
-//uuid article price quntity manufacturerUid  active
-//+ product to store
-
-//productuid langId name description
