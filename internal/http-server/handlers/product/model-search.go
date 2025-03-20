@@ -7,14 +7,9 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"ocapi/entity"
 	"ocapi/internal/lib/api/response"
 	"ocapi/internal/lib/sl"
 )
-
-type Core interface {
-	FindModel(model string) ([]*entity.Product, error)
-}
 
 func ModelSearch(log *slog.Logger, handler Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -17,12 +17,10 @@ func (c *CategoryData) Bind(_ *http.Request) error {
 	return validate.Struct(c)
 }
 
-func DefaultCategoryData(uid string) *CategoryData {
-	return &CategoryData{
-		CategoryUID: uid,
-		ParentUID:   "",
-		SortOrder:   0,
-		Top:         0,
-		Active:      false,
-	}
+type CategoryDataRequest struct {
+	Data []*CategoryData `json:"data" validate:"required,dive"`
+}
+
+func (p *CategoryDataRequest) Bind(_ *http.Request) error {
+	return validate.Struct(p)
 }

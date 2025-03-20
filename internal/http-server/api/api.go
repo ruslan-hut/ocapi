@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"ocapi/internal/config"
+	"ocapi/internal/http-server/handlers/category"
 	"ocapi/internal/http-server/handlers/product"
 	"ocapi/internal/http-server/handlers/service"
 	"ocapi/internal/http-server/middleware/authenticate"
@@ -26,6 +27,7 @@ type Handler interface {
 	authenticate.Authenticate
 	service.Service
 	product.Core
+	category.Core
 }
 
 func New(conf *config.Config, log *slog.Logger, handler Handler) error {
@@ -43,12 +45,14 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 	router.Use(authenticate.New(log, handler))
 
 	router.Route("/product", func(r chi.Router) {
-		r.Get("/model/{model}", product.ModelSearch(log, handler))
+		r.Get("/{model}", product.ModelSearch(log, handler))
+		r.Post("/save", product.SaveProduct(log, handler))
+		r.Post("/description", product.SaveDescription(log, handler))
 	})
-
-	//router.Route("/tg", func(r chi.Router) {
-	//	r.Post("/test", service.SendTestEvent(log, handler))
-	//})
+	router.Route("/category", func(r chi.Router) {
+		r.Post("/save", category.SaveCategory(log, handler))
+		r.Post("/description", category.SaveDescription(log, handler))
+	})
 
 	httpLog := slog.NewLogLogger(log.Handler(), slog.LevelError)
 	server.httpServer = &http.Server{

@@ -15,3 +15,11 @@ type CategoryDescriptionData struct {
 func (c *CategoryDescriptionData) Bind(_ *http.Request) error {
 	return validate.Struct(c)
 }
+
+type CategoryDescriptionRequest struct {
+	Data []*CategoryDescriptionData `json:"data" validate:"required,dive"`
+}
+
+func (p *CategoryDescriptionRequest) Bind(_ *http.Request) error {
+	return validate.Struct(p)
+}

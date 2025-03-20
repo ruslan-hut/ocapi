@@ -18,3 +18,11 @@ type ProductData struct {
 func (p *ProductData) Bind(_ *http.Request) error {
 	return validate.Struct(p)
 }
+
+type ProductDataRequest struct {
+	Data []*ProductData `json:"data" validate:"required,dive"`
+}
+
+func (p *ProductDataRequest) Bind(_ *http.Request) error {
+	return validate.Struct(p)
+}

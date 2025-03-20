@@ -18,7 +18,18 @@ func (c *Core) LoadProducts(products []*entity.ProductData) error {
 	}
 	err := c.repo.SaveProducts(products)
 	if err != nil {
-		return fmt.Errorf("failed to save products: %w", err)
+		return fmt.Errorf("save products: %w", err)
+	}
+	return nil
+}
+
+func (c *Core) LoadProductDescriptions(products []*entity.ProductDescription) error {
+	if c.repo == nil {
+		return fmt.Errorf("repository not initialized")
+	}
+	err := c.repo.SaveProductsDescription(products)
+	if err != nil {
+		return fmt.Errorf("save product descriptions: %w", err)
 	}
 	return nil
 }
