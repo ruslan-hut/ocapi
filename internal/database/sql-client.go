@@ -45,6 +45,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 		`SELECT 
 					product_id,
 					model,
+					sku,
 					status,
 					stock_status_id,
 					quantity,
@@ -69,6 +70,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 		if err = rows.Scan(
 			&product.Id,
 			&product.Model,
+			&product.Sku,
 			&product.Status,
 			&product.StockStatusId,
 			&product.Quantity,
