@@ -16,6 +16,9 @@ func (c *Core) LoadProducts(products []*entity.ProductData) error {
 	if c.repo == nil {
 		return fmt.Errorf("repository not initialized")
 	}
-	//c.repo.SaveProducts(products)
+	err := c.repo.SaveProducts(products)
+	if err != nil {
+		return fmt.Errorf("failed to save products: %w", err)
+	}
 	return nil
 }

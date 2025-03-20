@@ -1,21 +1,20 @@
 package entity
 
+import (
+	"net/http"
+	"ocapi/internal/lib/validate"
+)
+
 type ProductData struct {
-	Name   string `json:"name" validate:"required"`
-	NamePl string `json:"name_pl"`
-	NameRu string `json:"name_ru"`
-	NameEn string `json:"name_en"`
+	UID             string  `json:"uid" validate:"required"`
+	Article         string  `json:"article,omitempty"`
+	Price           float32 `json:"price,omitempty"`
+	Quantity        int     `json:"quantity,omitempty"`
+	ManufacturerUID int     `json:"manufacturer_uid,omitempty"`
+	Active          bool    `json:"active,omitempty"`
+	CategoryUID     int64   `json:"category_uid,omitempty"`
+}
 
-	Description   string `json:"description"`
-	DescriptionPl string `json:"description_pl"`
-	DescriptionRu string `json:"description_ru"`
-	DescriptionEn string `json:"description_en"`
-
-	Uuid         string `json:"uuid" validate:"required"`
-	Active       bool   `json:"active"`
-	Article      string `json:"article"`
-	CategoryUuid string `json:"category_uuid" validate:"required"`
-	Stock        string `json:"stock"`
-	Currency     string `json:"currency"`
-	Price        string `json:"price"`
+func (p *ProductData) Bind(_ *http.Request) error {
+	return validate.Struct(p)
 }

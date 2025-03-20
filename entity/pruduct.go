@@ -1,8 +1,6 @@
 package entity
 
 import (
-	"net/http"
-	"ocapi/internal/lib/validate"
 	"time"
 )
 
@@ -38,15 +36,47 @@ type Product struct {
 	DateAdded      time.Time `json:"date_added,omitempty" bson:"date_added" validate:"omitempty"`
 	DateModified   time.Time `json:"date_modified,omitempty" bson:"date_modified" validate:"omitempty"`
 	Viewed         int       `json:"viewed,omitempty" bson:"viewed" validate:"omitempty"`
-
-	Description  string `json:"description,omitempty" bson:"description" validate:"omitempty"`
-	Stock        int    `json:"stock,omitempty" bson:"stock" validate:"omitempty"`
-	Active       bool   `json:"active,omitempty" bson:"active" validate:"omitempty"`
-	Manufacturer string `json:"manufacturer,omitempty" bson:"manufacturer" validate:"omitempty"`
-	Code         string `json:"code,omitempty" bson:"code" validate:"omitempty"`
-	CategoryUUID string `json:"category_uuid,omitempty" bson:"category_uuid" validate:"omitempty"`
 }
 
-func (p *Product) Bind(_ *http.Request) error {
-	return validate.Struct(p)
+func ProductFromProductData(product *ProductData) *Product {
+	var status = 0
+	if product.Active {
+		status = 1
+	}
+
+	var stockStatusId = 5
+	if product.Quantity > 0 {
+		stockStatusId = 7
+	}
+
+	return &Product{
+		Model:          product.UID,
+		Sku:            product.Article,
+		Quantity:       product.Quantity,
+		Minimum:        1,
+		Subtract:       1,
+		StockStatusId:  stockStatusId,
+		DateAvailable:  time.Now().AddDate(0, 0, -3),
+		ManufacturerId: product.ManufacturerUID,
+		Shipping:       1,
+		Price:          product.Price,
+		Points:         0,
+		Weight:         0,
+		WeightClassId:  1,
+		Length:         0,
+		Width:          0,
+		Height:         0,
+		LengthClassId:  1,
+		Status:         status,
+		TaxClassId:     9,
+		SortOrder:      0,
+		DateAdded:      time.Now(),
+		DateModified:   time.Now(),
+	}
 }
+
+//model, sku, price quantity manufacturer, status
+//uuid article price quntity manufacturerUid  active
+//+ product to store
+
+//productuid langId name description
