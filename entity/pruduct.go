@@ -70,7 +70,7 @@ func ProductFromProductData(product *ProductData) *Product {
 		Status:         status,
 		TaxClassId:     9,
 		SortOrder:      0,
-		DateAdded:      time.Now(),
+		//DateAdded:      time.Now(),
 		//DateModified:   time.Now(),
 	}
 }

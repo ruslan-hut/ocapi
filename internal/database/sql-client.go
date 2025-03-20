@@ -156,19 +156,20 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
-func (s *MySql) updateProduct(productId int64, product *entity.ProductData) error {
-	manufacturerId, err := s.getManufacturerId(product.Manufacturer)
+func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) error {
+
+	product := entity.ProductFromProductData(productData)
+
+	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
 	if err != nil {
 		return fmt.Errorf("manufacturer search: %v", err)
 	}
-	var status = 0
-	if product.Active {
-		status = 1
-	}
+
 	query := fmt.Sprintf(
 		`UPDATE %sproduct SET
 				sku = ?, 
 				quantity = ?, 
+                stock_status_id = ?,
 				price = ?, 
 				manufacturer_id = ?, 
 				status = ?, 
@@ -178,11 +179,12 @@ func (s *MySql) updateProduct(productId int64, product *entity.ProductData) erro
 	)
 
 	res, err := s.db.Exec(query,
-		product.Article,
+		product.Sku,
 		product.Quantity,
+		product.StockStatusId,
 		product.Price,
 		manufacturerId,
-		status,
+		product.Status,
 		time.Now(),
 		productId)
 	if err != nil {
@@ -191,7 +193,7 @@ func (s *MySql) updateProduct(productId int64, product *entity.ProductData) erro
 
 	rowsAffected, _ := res.RowsAffected()
 	if rowsAffected == 0 {
-		return fmt.Errorf("product %s not found", product.Uid)
+		return fmt.Errorf("product id %d not found; model %s", productId, product.Model)
 	}
 	return nil
 }
