@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	ProductSearch(model string) ([]*entity.Product, error)
+	SaveProducts(products []*entity.Product) error
 }
 
 type MessageService interface {
@@ -20,13 +21,6 @@ type Core struct {
 	ms      MessageService
 	authKey string
 	log     *slog.Logger
-}
-
-func (c *Core) FindModel(model string) ([]*entity.Product, error) {
-	if c.repo == nil {
-		return nil, fmt.Errorf("repository not initialized")
-	}
-	return c.repo.ProductSearch(model)
 }
 
 func New(repo Repository, key string, log *slog.Logger) *Core {
@@ -50,16 +44,4 @@ func (c *Core) SendEvent(message *entity.EventMessage) (interface{}, error) {
 		return nil, fmt.Errorf("not set MessageService")
 	}
 	return nil, c.ms.SendEventMessage(message)
-}
-
-func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
-	if token == "" {
-		return nil, fmt.Errorf("token not provided")
-	}
-	if c.authKey == token {
-		return &entity.User{
-			Username: "internal",
-		}, nil
-	}
-	return nil, fmt.Errorf("invalid token")
 }

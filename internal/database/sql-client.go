@@ -8,16 +8,15 @@ import (
 	"ocapi/entity"
 	"ocapi/internal/config"
 	"strings"
-	"time"
 )
 
-type SQLDB struct {
+type MySql struct {
 	ctx    context.Context
 	db     *sql.DB
 	prefix string
 }
 
-func NewSQLClient(conf *config.Config) (*SQLDB, error) {
+func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if !conf.SQL.Enabled {
 		return nil, nil
 	}
@@ -32,18 +31,18 @@ func NewSQLClient(conf *config.Config) (*SQLDB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &SQLDB{
+	return &MySql{
 		db:     db,
 		ctx:    context.Background(),
 		prefix: conf.SQL.Prefix,
 	}, nil
 }
 
-func (s *SQLDB) Close() {
+func (s *MySql) Close() {
 	_ = s.db.Close()
 }
 
-func (s *SQLDB) ProductSearch(model string) ([]*entity.Product, error) {
+func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 	query := fmt.Sprintf(
 		`SELECT 
 					product_id,
@@ -84,45 +83,24 @@ func (s *SQLDB) ProductSearch(model string) ([]*entity.Product, error) {
 	return products, nil
 }
 
-func (s *SQLDB) AddProducts(products []entity.Product) error {
+func (s *MySql) SaveProducts(products []*entity.Product) error {
+	var err error
 	for _, product := range products {
-		err := s.addProduct(product)
+		if product.Id == 0 {
+			err = s.addProduct(product)
+		} else {
+			err = s.updateProduct(product)
+		}
 		if err != nil {
-			return err
+			return fmt.Errorf("product %s failed: %v", product.Model, err)
 		}
 	}
 	return nil
 }
 
-func (s *SQLDB) addProduct(product entity.Product) error {
-	// Check if the product already exists in the database by its code (uuid)
-	var productId int64
-	err := s.db.QueryRowContext(s.ctx, "SELECT product_id FROM ?product WHERE LCASE(code) = ?", s.prefix, product.Model).Scan(&productId)
-	if err != nil && err != sql.ErrNoRows {
-		return fmt.Errorf("failed to query product: %v", err)
-	}
-
-	var nowDate = time.Now().Format("2006-01-02 15:04:05")
-
-	manufacturerId, err := s.getManufacturerId(product.Manufacturer)
-	if err != nil {
-		manufacturerId = 0
-	}
-
-	var stockStatusId = 5
-	if product.Stock > 0 {
-		stockStatusId = 7
-	}
-
-	var status = 0
-	if product.Active {
-		status = 1
-	}
-	// If the product exists, update it
-	if err == nil {
-		// Update the product details in the database
-		_, err := s.db.ExecContext(s.ctx, `
-			UPDATE ?product SET
+func (s *MySql) updateProduct(product *entity.Product) error {
+	query := fmt.Sprintf(
+		`UPDATE %sproduct SET
 				model = ?, 
 				sku = ?, 
 				quantity = ?, 
@@ -136,92 +114,104 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 				status = ?, 
 				date_modified = ? 
 			    WHERE product_id = ?`,
-			s.prefix,
-			product.Model,
-			product.Sku,
-			product.Quantity,
-			product.Price,
-			0,
-			stockStatusId,
-			manufacturerId,
-			product.Length,
-			product.Width,
-			product.Height,
-			status,
-			nowDate,
-			productId)
-		if err != nil {
-			return fmt.Errorf("failed to update product: %v", err)
-		}
+		s.prefix,
+	)
+	_, err := s.db.Query(query,
+		s.prefix,
+		product.Model,
+		product.Sku,
+		product.Quantity,
+		product.Price,
+		0,
+		product.StockStatusId,
+		product.ManufacturerId,
+		product.Length,
+		product.Width,
+		product.Height,
+		product.Status,
+		product.DateModified,
+		product.Id)
+	if err != nil {
+		return fmt.Errorf("failed to update product: %v", err)
+	}
 
-		// Update the product descriptions in different languages
-		if err := s.updateProductDescription(productId, 1, product.Model, product.Description); err != nil {
-			return err
-		}
-		if err := s.updateProductDescription(productId, 2, product.Model, product.Description); err != nil {
-			return err
-		}
-		if err := s.updateProductDescription(productId, 3, product.Model, product.Description); err != nil {
-			return err
-		}
-	} else {
-		// Insert the product if it does not exist
-		dateAvailable := time.Now().Add(-3 * 24 * time.Hour).Format("2006-01-02")
+	// Update the product descriptions in different languages
+	if err = s.updateProductDescription(product.Id, 1, product.Model, product.Description); err != nil {
+		return err
+	}
+	if err = s.updateProductDescription(product.Id, 2, product.Model, product.Description); err != nil {
+		return err
+	}
+	if err = s.updateProductDescription(product.Id, 3, product.Model, product.Description); err != nil {
+		return err
+	}
+	return nil
+}
 
-		// Insert product into the product table
-		res, err := s.db.ExecContext(s.ctx, `
-			INSERT INTO product (
-			                     code, 
-			                     model, 
-			                     sku, 
-			                     quantity, 
-			                     minimum, 
-			                     subtract, 
-			                     stock_status_id,
-			                     date_available, 
-			                     manufacturer_id, 
-			                     shipping, 
-			                     price, 
-			                     points, 
-			                     weight, 
-			                     weight_class_id, 
-			                     length, 
-			                     width, 
-			                     height, 
-			                     length_class_id, 
-			                     status, 
-			                     tax_class_id, 
-			                     sort_order, 
-			                     date_added, 
-			                     date_modified)
+func (s *MySql) addProduct(product *entity.Product) error {
+
+	//manufacturerId, err := s.getManufacturerId(product.Manufacturer)
+	//if err != nil {
+	//	manufacturerId = 0
+	//}
+
+	//var stockStatusId = 5
+	//if product.Stock > 0 {
+	//	stockStatusId = 7
+	//}
+
+	//var status = 0
+	//if product.Active {
+	//	status = 1
+	//}
+
+	query := fmt.Sprintf(
+		`INSERT INTO %sproduct (
+				model,
+				sku,
+				quantity,
+				stock_status_id,
+				date_available,
+				manufacturer_id,
+				price,
+				length,
+				width,
+				height,
+				status,
+				sort_order,
+				date_added,
+				date_modified)
 			VALUES (?, ?, ?, ?, '1', '1', ?, ?, ?, '1', ?, '0', 0, '1', ?, ?, ?, '1', ?, '9', '0', ?, ?)`,
-			product.Code, product.Model, product.Sku, product.Quantity, product.StockStatusId, dateAvailable,
-			manufacturerId, product.Price, product.Length, product.Width, product.Height, product.Status,
-			nowDate, nowDate)
-		if err != nil {
-			return fmt.Errorf("failed to insert product: %v", err)
-		}
+		s.prefix)
+	// Insert product into the product table
+	res, err := s.db.Exec(query,
+		product.Model, product.Sku, product.Quantity, product.StockStatusId, product.DateAvailable,
+		product.ManufacturerId, product.Price, product.Length, product.Width, product.Height, product.Status,
+		product.SortOrder, product.DateAdded, product.DateModified)
 
-		// Get the last inserted product_id
-		productId, err = res.LastInsertId()
-		if err != nil {
-			return fmt.Errorf("failed to get last insert id: %v", err)
-		}
+	if err != nil {
+		return fmt.Errorf("failed to insert product: %v", err)
+	}
 
-		// Insert product description in different languages
-		if err := s.insertProductDescription(productId, 1, product.Model, product.Description); err != nil {
-			return err
-		}
-		if err := s.insertProductDescription(productId, 2, product.Model, product.Description); err != nil {
-			return err
-		}
-		if err := s.insertProductDescription(productId, 3, product.Model, product.Description); err != nil {
-			return err
-		}
+	// Get the last inserted product_id
+	productId, err := res.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert id: %v", err)
+	}
+
+	// Insert product description in different languages
+	if err = s.insertProductDescription(productId, 1, product.Model, product.Description); err != nil {
+		return err
+	}
+	if err = s.insertProductDescription(productId, 2, product.Model, product.Description); err != nil {
+		return err
+	}
+	if err = s.insertProductDescription(productId, 3, product.Model, product.Description); err != nil {
+		return err
 	}
 
 	// Insert product to category (if applicable)
-	if err := s.addProductToCategory(productId, product); err != nil {
+	if err = s.addProductToCategory(productId, product); err != nil {
 		return err
 	}
 
@@ -239,14 +229,14 @@ func (s *SQLDB) addProduct(product entity.Product) error {
 		return fmt.Errorf("failed to insert SEO URL: %v", err)
 	}
 
-	err = s.disActivateProducts(nowDate)
-	if err != nil {
-		return fmt.Errorf("failed to disactivate products: %v", err)
-	}
+	//err = s.disActivateProducts(nowDate)
+	//if err != nil {
+	//	return fmt.Errorf("failed to disactivate products: %v", err)
+	//}
 	return nil
 }
 
-func (s *SQLDB) insertProductDescription(productId int64, languageId int, name, description string) error {
+func (s *MySql) insertProductDescription(productId int64, languageId int, name, description string) error {
 	_, err := s.db.ExecContext(s.ctx, `
 		INSERT INTO ?product_description (
 		    product_id, 
@@ -264,7 +254,7 @@ func (s *SQLDB) insertProductDescription(productId int64, languageId int, name, 
 }
 
 // Helper function to update product descriptions
-func (s *SQLDB) updateProductDescription(productId int64, languageId int, name, description string) error {
+func (s *MySql) updateProductDescription(productId int64, languageId int, name, description string) error {
 	_, err := s.db.ExecContext(s.ctx, `
 		UPDATE ?product_description 
 		SET name = ?, description = ?, meta_title = ? 
@@ -275,7 +265,7 @@ func (s *SQLDB) updateProductDescription(productId int64, languageId int, name, 
 }
 
 // Helper function to add product to category
-func (s *SQLDB) addProductToCategory(productId int64, product entity.Product) error {
+func (s *MySql) addProductToCategory(productId int64, product *entity.Product) error {
 	if product.CategoryUUID != "" {
 		var categoryId int
 		err := s.db.QueryRowContext(s.ctx, "SELECT category_id FROM ?category WHERE category_uid = ?", s.prefix, product.CategoryUUID).Scan(&categoryId)
@@ -290,7 +280,7 @@ func (s *SQLDB) addProductToCategory(productId int64, product entity.Product) er
 	return nil
 }
 
-func (s *SQLDB) getManufacturerId(manufacturer string) (int64, error) {
+func (s *MySql) getManufacturerId(manufacturer string) (int64, error) {
 	// Convert manufacturer name to lowercase and prepare it for the query
 	manufacturerLower := strings.ToLower(manufacturer)
 
@@ -349,18 +339,18 @@ func (s *SQLDB) getManufacturerId(manufacturer string) (int64, error) {
 }
 
 // Placeholder for the TransLit function
-func (s *SQLDB) TransLit(input string) string {
+func (s *MySql) TransLit(input string) string {
 	// Transliteration logic here
 	return input
 }
 
 // Placeholder for the MetaURL function
-func (s *SQLDB) MetaURL(input string) string {
+func (s *MySql) MetaURL(input string) string {
 	// Meta URL logic here
 	return input
 }
 
-func (s *SQLDB) disActivateProducts(now string) error {
+func (s *MySql) disActivateProducts(now string) error {
 	_, err := s.db.ExecContext(s.ctx, `
 		UPDATE ?product SET status = 0 WHERE date_modified < ?`,
 		s.prefix, now)
