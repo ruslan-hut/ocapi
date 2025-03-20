@@ -107,15 +107,15 @@ func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
 
 func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescription) error {
 	for _, productDescData := range productsDescData {
+
 		productId, err := s.getProductByUID(productDescData.ProductUid)
 		if err != nil {
-			return fmt.Errorf("product search failed: %v", err)
+			return fmt.Errorf("product search: %v", err)
 		}
 
 		err = s.upsertProductDescription(productId, productDescData)
-
 		if err != nil {
-			return fmt.Errorf("productDesc %s failed: %v", productDescData.ProductUid, err)
+			return fmt.Errorf("product description %s: %v", productDescData.ProductUid, err)
 		}
 	}
 	return nil
@@ -125,7 +125,7 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 	for _, categoryData := range categoriesData {
 		categoryId, err := s.getCategoryByUID(categoryData.CategoryUID)
 		if err != nil {
-			return fmt.Errorf("category search failed: %v", err)
+			return fmt.Errorf("category search: %v", err)
 		}
 		category := entity.CategoryFromCategoryData(categoryData)
 		category.CategoryId = categoryId
@@ -133,7 +133,7 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 		err = s.updateCategory(category)
 
 		if err != nil {
-			return fmt.Errorf("category %s failed: %v", categoryData.CategoryUID, err)
+			return fmt.Errorf("category %s: %v", categoryData.CategoryUID, err)
 		}
 	}
 	return nil
@@ -143,14 +143,14 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	for _, categoryDescData := range categoriesDescData {
 		categoryId, err := s.getCategoryByUID(categoryDescData.CategoryUid)
 		if err != nil {
-			return fmt.Errorf("category search failed: %v", err)
+			return fmt.Errorf("category search: %v", err)
 		}
 		category := entity.CategoryDescriptionFromCategoryDescriptionData(categoryDescData)
 		category.CategoryId = categoryId
 		err = s.upsertCategoryDescription(category)
 
 		if err != nil {
-			return fmt.Errorf("save category description %s: %v", categoryDescData.CategoryUid, err)
+			return fmt.Errorf("category description %s: %v", categoryDescData.CategoryUid, err)
 		}
 	}
 	return nil
@@ -159,7 +159,7 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 func (s *MySql) updateProduct(productId int64, product *entity.ProductData) error {
 	manufacturerId, err := s.getManufacturerId(product.Manufacturer)
 	if err != nil {
-		return fmt.Errorf("manufacturer search failed: %v", err)
+		return fmt.Errorf("manufacturer search: %v", err)
 	}
 	var status = 0
 	if product.Active {
@@ -186,7 +186,7 @@ func (s *MySql) updateProduct(productId int64, product *entity.ProductData) erro
 		time.Now(),
 		productId)
 	if err != nil {
-		return fmt.Errorf("failed to update product: %v", err)
+		return fmt.Errorf("update product: %v", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()
@@ -202,7 +202,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 
 	manufacturerId, err := s.getProductByUID(productData.Manufacturer)
 	if err != nil {
-		return fmt.Errorf("manufacturer search failed: %v", err)
+		return fmt.Errorf("manufacturer search: %v", err)
 	}
 	product.ManufacturerId = manufacturerId
 
@@ -258,13 +258,13 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		product.DateModified)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert product: %v", err)
+		return fmt.Errorf("insert product: %v", err)
 	}
 
 	// Get the last inserted product_id
 	productId, err := res.LastInsertId()
 	if err != nil {
-		return fmt.Errorf("failed to get last insert id: %v", err)
+		return fmt.Errorf("get last insert id: %v", err)
 	}
 
 	if err = s.addProductToStore(productId); err != nil {
@@ -312,7 +312,7 @@ func (s *MySql) addProductToStore(productID int64) error {
 		productID, 0)
 
 	if err != nil {
-		return fmt.Errorf("failed addProductToStore: %v", err)
+		return fmt.Errorf("product to store: %v", err)
 	}
 
 	return nil
@@ -331,7 +331,7 @@ func (s *MySql) addProductToLayout(productID int64) error {
 		productID, 0, 0)
 
 	if err != nil {
-		return fmt.Errorf("failed addProductToLayout: %v", err)
+		return fmt.Errorf("product to layout: %v", err)
 	}
 
 	return nil
@@ -374,22 +374,41 @@ func (s *MySql) getProductDescription(productDesc *entity.ProductDescription) ([
 }
 
 func (s *MySql) upsertProductDescription(productId int64, productDescription *entity.ProductDescription) error {
-	query := fmt.Sprintf(
-		`UPDATE %sproduct_description SET
+	var query string
+	var err error
+	var res sql.Result
+
+	if productDescription.Description == "" {
+		query = fmt.Sprintf(
+			`UPDATE %sproduct_description SET
+					name = ?
+			    WHERE product_id = ? AND language_id = ?`,
+			s.prefix,
+		)
+		res, err = s.db.Exec(query,
+			productDescription.Name,
+			productId,
+			productDescription.LanguageId)
+	} else {
+		query = fmt.Sprintf(
+			`UPDATE %sproduct_description SET
 					name = ?,
 					description = ?
 			    WHERE product_id = ? AND language_id = ?`,
-		s.prefix,
-	)
-	res, err := s.db.Exec(query,
-		productDescription.Name,
-		productDescription.Description,
-		productId,
-		productDescription.LanguageId)
+			s.prefix,
+		)
+		res, err = s.db.Exec(query,
+			productDescription.Name,
+			productDescription.Description,
+			productId,
+			productDescription.LanguageId)
+	}
 	if err != nil {
 		return fmt.Errorf("update product description: %v", err)
 	}
+
 	rowsAffected, _ := res.RowsAffected()
+
 	if rowsAffected == 0 {
 		query = fmt.Sprintf(
 			`INSERT INTO %sproduct_description (
@@ -431,7 +450,7 @@ func (s *MySql) getProductByUID(uid string) (int64, error) {
 	)
 	rows, err := s.db.Query(query, uid)
 	if err != nil {
-		return 0, fmt.Errorf("query failed: %w", err)
+		return 0, err
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
@@ -461,7 +480,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	)
 	rows, err := s.db.Query(query, uid)
 	if err != nil {
-		return 0, fmt.Errorf("query failed: %w", err)
+		return 0, err
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
@@ -589,16 +608,12 @@ func (s *MySql) addParentUIDToCategory() error {
 			alterQuery := fmt.Sprintf(`ALTER TABLE %scategory ADD COLUMN parent_uid VARCHAR(64) NULL`, s.prefix)
 			_, err = s.db.Exec(alterQuery)
 			if err != nil {
-				return fmt.Errorf("failed to add parent_uid column: %w", err)
+				return fmt.Errorf("add parent_uid column: %w", err)
 			}
-			fmt.Println("parent_uid column added successfully.")
 		} else {
-			return fmt.Errorf("error checking column existence: %w", err)
+			return fmt.Errorf("checking column existence: %w", err)
 		}
-	} else {
-		fmt.Println("parent_uid column already exists.")
 	}
-
 	return nil
 }
 
@@ -613,16 +628,12 @@ func (s *MySql) addCategoryUIDToCategory() error {
 			alterQuery := fmt.Sprintf(`ALTER TABLE %scategory ADD COLUMN category_uid VARCHAR(64) NULL`, s.prefix)
 			_, err = s.db.Exec(alterQuery)
 			if err != nil {
-				return fmt.Errorf("failed to add category_uid column: %w", err)
+				return fmt.Errorf("add category_uid column: %w", err)
 			}
-			fmt.Println("category_uid column added successfully.")
 		} else {
-			return fmt.Errorf("error checking column existence: %w", err)
+			return fmt.Errorf("checking column existence: %w", err)
 		}
-	} else {
-		fmt.Println("category_uid column already exists.")
 	}
-
 	return nil
 }
 
