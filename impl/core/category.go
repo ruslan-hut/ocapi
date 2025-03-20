@@ -11,7 +11,7 @@ func (c *Core) LoadCategories(categories []*entity.CategoryData) error {
 	}
 	err := c.repo.SaveCategories(categories)
 	if err != nil {
-		return fmt.Errorf("save categories: %w", err)
+		return err
 	}
 	return nil
 }
@@ -22,7 +22,7 @@ func (c *Core) LoadCategoryDescriptions(categories []*entity.CategoryDescription
 	}
 	err := c.repo.SaveCategoriesDescription(categories)
 	if err != nil {
-		return fmt.Errorf("save categories descriptions: %w", err)
+		return err
 	}
 	return nil
 }

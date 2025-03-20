@@ -18,7 +18,7 @@ func (c *Core) LoadProducts(products []*entity.ProductData) error {
 	}
 	err := c.repo.SaveProducts(products)
 	if err != nil {
-		return fmt.Errorf("save products: %w", err)
+		return err
 	}
 	return nil
 }
@@ -29,7 +29,7 @@ func (c *Core) LoadProductDescriptions(products []*entity.ProductDescription) er
 	}
 	err := c.repo.SaveProductsDescription(products)
 	if err != nil {
-		return fmt.Errorf("save product descriptions: %w", err)
+		return err
 	}
 	return nil
 }

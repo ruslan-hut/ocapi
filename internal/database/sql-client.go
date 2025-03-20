@@ -440,7 +440,7 @@ func (s *MySql) getProductByUID(uid string) (int64, error) {
 	for rows.Next() {
 		var productId int64
 		if err = rows.Scan(
-			productId,
+			&productId,
 		); err != nil {
 			return 0, err
 		}
@@ -470,7 +470,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	for rows.Next() {
 		var categoryId int64
 		if err = rows.Scan(
-			categoryId,
+			&categoryId,
 		); err != nil {
 			return 0, err
 		}
