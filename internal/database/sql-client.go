@@ -31,10 +31,25 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
-	return &MySql{
+	sdb := &MySql{
 		db:     db,
 		prefix: conf.SQL.Prefix,
-	}, nil
+	}
+
+	if err = sdb.addColumnIfNotExists("category", "parent_uid", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
+	if err = sdb.addColumnIfNotExists("category", "category_uid", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
+	if err = sdb.addColumnIfNotExists("category_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
+	if err = sdb.addColumnIfNotExists("product_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
+
+	return sdb, nil
 }
 
 func (s *MySql) Close() {
@@ -376,54 +391,96 @@ func (s *MySql) getProductDescription(productDesc *entity.ProductDescription) ([
 	return productsDesc, nil
 }
 
+func (s *MySql) findProductDescription(productId, languageId int64) (*entity.ProductDescription, error) {
+	query := fmt.Sprintf(
+		`SELECT
+					name,
+					description,
+					meta_title,
+					meta_description,
+					meta_keyword,
+					seo_keyword
+				FROM %sproduct_description 
+				WHERE product_id=? AND language_id=?`,
+		s.prefix,
+	)
+	rows, err := s.db.Query(query, productId, languageId)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+
+	for rows.Next() {
+		var productDesc entity.ProductDescription
+		if err = rows.Scan(
+			&productDesc.Name,
+			&productDesc.Description,
+			&productDesc.MetaTitle,
+			&productDesc.MetaDescription,
+			&productDesc.MetaKeyword,
+			&productDesc.SeoKeyword,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		return &productDesc, nil
+	}
+
+	return nil, nil
+}
+
 func (s *MySql) upsertProductDescription(productId int64, productDescription *entity.ProductDescription) error {
 	var query string
 	var err error
-	var res sql.Result
 
-	if productDescription.Description == "" {
-		query = fmt.Sprintf(
-			`UPDATE %sproduct_description SET
+	desc, err := s.findProductDescription(productId, productDescription.LanguageId)
+	if err != nil {
+		return fmt.Errorf("lookup description: %v", err)
+	}
+
+	if desc != nil {
+		if productDescription.Description == "" {
+			query = fmt.Sprintf(
+				`UPDATE %sproduct_description SET
 					name = ?
 			    WHERE product_id = ? AND language_id = ?`,
-			s.prefix,
-		)
-		res, err = s.db.Exec(query,
-			productDescription.Name,
-			productId,
-			productDescription.LanguageId)
-	} else {
-		query = fmt.Sprintf(
-			`UPDATE %sproduct_description SET
+				s.prefix,
+			)
+			_, err = s.db.Exec(query,
+				productDescription.Name,
+				productId,
+				productDescription.LanguageId)
+		} else {
+			query = fmt.Sprintf(
+				`UPDATE %sproduct_description SET
 					name = ?,
 					description = ?
 			    WHERE product_id = ? AND language_id = ?`,
-			s.prefix,
-		)
-		res, err = s.db.Exec(query,
-			productDescription.Name,
-			productDescription.Description,
-			productId,
-			productDescription.LanguageId)
-	}
-	if err != nil {
-		return fmt.Errorf("update: %v", err)
-	}
-
-	rowsAffected, _ := res.RowsAffected()
-
-	if rowsAffected == 0 {
+				s.prefix,
+			)
+			_, err = s.db.Exec(query,
+				productDescription.Name,
+				productDescription.Description,
+				productId,
+				productDescription.LanguageId)
+		}
+		if err != nil {
+			return fmt.Errorf("update: %v", err)
+		}
+	} else {
 		query = fmt.Sprintf(
 			`INSERT INTO %sproduct_description (
 				product_id,
 				language_id,
-                name,
-                description,
-                meta_title,
-                meta_description,
-                meta_keyword,
-                tag)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				name,
+				description,
+				meta_title,
+				meta_description,
+				meta_keyword,
+                seo_keyword,
+				tag)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			s.prefix)
 
 		_, err = s.db.Exec(query,
@@ -434,11 +491,13 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 			productDescription.Name,
 			"",
 			"",
+			"",
 			"")
 		if err != nil {
 			return fmt.Errorf("insert: %v", err)
 		}
 	}
+
 	return nil
 }
 
@@ -651,38 +710,18 @@ func (s *MySql) addProductToCategory(product *entity.ProductData) error {
 	return nil
 }
 
-func (s *MySql) addParentUIDToCategory() error {
+func (s *MySql) addColumnIfNotExists(tableName, columnName, columnType string) error {
 	// Check if the column exists
-	query := fmt.Sprintf(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%scategory' AND COLUMN_NAME = 'parent_uid'`,
-		s.prefix)
+	query := fmt.Sprintf(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s%s' AND COLUMN_NAME = '%s'`,
+		s.prefix, tableName, columnName)
 	err := s.db.QueryRow(query).Scan()
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// Column does not exist, so add it
-			alterQuery := fmt.Sprintf(`ALTER TABLE %scategory ADD COLUMN parent_uid VARCHAR(64) NULL`, s.prefix)
+			alterQuery := fmt.Sprintf(`ALTER TABLE %s%s ADD COLUMN %s %s`, s.prefix, tableName, columnName, columnType)
 			_, err = s.db.Exec(alterQuery)
 			if err != nil {
-				return fmt.Errorf("add parent_uid column: %w", err)
-			}
-		} else {
-			return fmt.Errorf("checking column existence: %w", err)
-		}
-	}
-	return nil
-}
-
-func (s *MySql) addCategoryUIDToCategory() error {
-	// Check if the column exists
-	query := fmt.Sprintf(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%scategory' AND COLUMN_NAME = 'category_uid'`,
-		s.prefix)
-	err := s.db.QueryRow(query).Scan()
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// Column does not exist, so add it
-			alterQuery := fmt.Sprintf(`ALTER TABLE %scategory ADD COLUMN category_uid VARCHAR(64) NULL`, s.prefix)
-			_, err = s.db.Exec(alterQuery)
-			if err != nil {
-				return fmt.Errorf("add category_uid column: %w", err)
+				return fmt.Errorf("add column %s to table %s: %w", columnName, tableName, err)
 			}
 		} else {
 			return fmt.Errorf("checking column existence: %w", err)
