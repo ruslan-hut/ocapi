@@ -45,7 +45,7 @@ func ProductFromProductData(product *ProductData) *Product {
 	}
 
 	var stockStatusId = 5
-	if product.Quantity > 0 {
+	if product.Price > 0 && product.Quantity > 0 {
 		stockStatusId = 7
 	}
 

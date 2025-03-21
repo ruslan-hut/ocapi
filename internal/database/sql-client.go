@@ -243,6 +243,7 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 func (s *MySql) addProduct(productData *entity.ProductData) error {
 
 	product := entity.ProductFromProductData(productData)
+	product.DateAdded = time.Now()
 
 	manufacturerId, err := s.getProductByUID(productData.Manufacturer)
 	if err != nil {
