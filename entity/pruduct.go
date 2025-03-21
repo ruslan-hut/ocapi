@@ -43,9 +43,13 @@ func ProductFromProductData(product *ProductData) *Product {
 	if product.Active {
 		status = 1
 	}
+	// make product not available if price is 0
+	if product.Price == 0 {
+		product.Quantity = 0
+	}
 
 	var stockStatusId = 5
-	if product.Price > 0 && product.Quantity > 0 {
+	if product.Quantity > 0 {
 		stockStatusId = 7
 	}
 
