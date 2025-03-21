@@ -24,6 +24,10 @@ type Config struct {
 		Port     string `yaml:"port" env-default:"8080"`
 		Prefix   string `yaml:"prefix" env-default:""`
 	} `yaml:"sql"`
+	Images struct {
+		Path string `yaml:"path" env-default:""`
+		Url  string `yaml:"url" env-default:""`
+	}
 	Telegram struct {
 		Enabled bool   `yaml:"enabled" env-default:"false"`
 		ApiKey  string `yaml:"api_key" env-default:""`

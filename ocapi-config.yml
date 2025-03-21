@@ -14,6 +14,9 @@ sql:
   database: ${SQL_DATABASE}
   port: ${SQL_PORT}
   prefix: ${SQL_PREFIX}
+images:
+  path: ${IMAGES_PATH}
+  url: ${IMAGES_URL}
 telegram:
   enabled: true
   api_key: ${TELEGRAM_API_KEY}

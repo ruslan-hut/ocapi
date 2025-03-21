@@ -26,6 +26,8 @@ jobs:
           sed -i 's|${SQL_DATABASE}|'"$SQL_DATABASE"'|g' ocapi-config.yml
           sed -i 's|${SQL_PORT}|'"$SQL_PORT"'|g' ocapi-config.yml
           sed -i 's|${SQL_PREFIX}|'"$SQL_PREFIX"'|g' ocapi-config.yml
+          sed -i 's|${IMAGES_PATH}|'"$IMAGES_PATH"'|g' ocapi-config.yml
+          sed -i 's|${IMAGES_URL}|'"$IMAGES_URL"'|g' ocapi-config.yml
           sed -i 's|${TELEGRAM_API_KEY}|'"$TELEGRAM_API_KEY"'|g' ocapi-config.yml
         env:
           LOG_ENV: ${{ vars.LOG_ENV }}
@@ -38,6 +40,8 @@ jobs:
           SQL_DATABASE: ${{ vars.SQL_DATABASE }}
           SQL_PORT: ${{ vars.SQL_PORT }}
           SQL_PREFIX: ${{ vars.SQL_PREFIX }}
+          IMAGES_PATH: ${{ secrets.IMAGES_PATH }}
+          IMAGES_URL: ${{ secrets.IMAGES_URL }}
           TELEGRAM_API_KEY: ${{ secrets.TELEGRAM_API_KEY }}
 
       - name: Copy Configuration to Server

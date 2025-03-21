@@ -39,6 +39,8 @@ func main() {
 
 	handler := core.New(db, conf.Listen.ApiKey, lg)
 
+	handler.SetImageParameters(conf.Images.Path, conf.Images.Url)
+
 	//if conf.Telegram.Enabled {
 	//	tg, e := telegram.New(conf.Telegram.ApiKey, lg)
 	//	if e != nil {

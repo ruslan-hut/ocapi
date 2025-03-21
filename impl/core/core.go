@@ -21,10 +21,12 @@ type MessageService interface {
 }
 
 type Core struct {
-	repo    Repository
-	ms      MessageService
-	authKey string
-	log     *slog.Logger
+	repo      Repository
+	ms        MessageService
+	authKey   string
+	imagePath string
+	imageUrl  string
+	log       *slog.Logger
 }
 
 func New(repo Repository, key string, log *slog.Logger) *Core {
@@ -33,6 +35,11 @@ func New(repo Repository, key string, log *slog.Logger) *Core {
 		authKey: key,
 		log:     log.With(sl.Module("core")),
 	}
+}
+
+func (c *Core) SetImageParameters(imagePath, imageUrl string) {
+	c.imagePath = imagePath
+	c.imageUrl = imageUrl
 }
 
 func (c *Core) SetMessageService(ms MessageService) {

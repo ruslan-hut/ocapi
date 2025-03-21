@@ -33,3 +33,11 @@ func (c *Core) LoadProductDescriptions(products []*entity.ProductDescription) er
 	}
 	return nil
 }
+
+func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
+	if c.repo == nil {
+		return fmt.Errorf("repository not initialized")
+	}
+
+	return nil
+}
