@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"reflect"
+	"strings"
 )
 
 // Struct validates a single struct object
@@ -19,6 +20,13 @@ func Struct(s interface{}) error {
 	var invalidValidationError *validator.InvalidValidationError
 
 	validate := validator.New()
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
 	err := validate.Struct(s)
 	if err == nil {
 		return nil
@@ -30,15 +38,7 @@ func Struct(s interface{}) error {
 			if len(message) > 0 {
 				message += "; "
 			}
-			fieldName := fieldErr.Field()
-			field, ok := reflect.TypeOf(s).Elem().FieldByName(fieldName)
-			if ok {
-				fieldJSONName, okk := field.Tag.Lookup("json")
-				if okk {
-					fieldName = fieldJSONName
-				}
-			}
-			message += fmt.Sprintf("%s %s", fieldName, fieldErr.Tag())
+			message += fmt.Sprintf("%s %s", fieldErr.Field(), fieldErr.Tag())
 		}
 		return fmt.Errorf(message)
 	} else if errors.As(err, &invalidValidationError) {
