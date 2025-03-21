@@ -134,7 +134,7 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 		err = s.updateCategory(category)
 
 		if err != nil {
-			return fmt.Errorf("category %s: %v", categoryData.CategoryUID, err)
+			return fmt.Errorf("category [%d] %s: %v", categoryId, categoryData.CategoryUID, err)
 		}
 	}
 	return nil
@@ -151,7 +151,7 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 		err = s.upsertCategoryDescription(category)
 
 		if err != nil {
-			return fmt.Errorf("category description %s: %v", categoryDescData.CategoryUid, err)
+			return fmt.Errorf("category [%d] %s: %v", categoryId, categoryDescData.CategoryUid, err)
 		}
 	}
 	return nil
