@@ -714,7 +714,8 @@ func (s *MySql) addColumnIfNotExists(tableName, columnName, columnType string) e
 	// Check if the column exists
 	query := fmt.Sprintf(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s%s' AND COLUMN_NAME = '%s'`,
 		s.prefix, tableName, columnName)
-	err := s.db.QueryRow(query).Scan()
+	var column string
+	err := s.db.QueryRow(query).Scan(&column)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// Column does not exist, so add it
@@ -724,7 +725,7 @@ func (s *MySql) addColumnIfNotExists(tableName, columnName, columnType string) e
 				return fmt.Errorf("add column %s to table %s: %w", columnName, tableName, err)
 			}
 		} else {
-			return fmt.Errorf("checking column existence: %w", err)
+			return fmt.Errorf("checking column %s existence in %s: %w", columnName, tableName, err)
 		}
 	}
 	return nil
