@@ -24,11 +24,11 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		conf.SQL.UserName, conf.SQL.Password, conf.SQL.HostName, conf.SQL.Port, conf.SQL.Database)
 	db, err := sql.Open("mysql", connectionURI)
 	if err != nil {
-		return nil, fmt.Errorf("sql connect error: %w", err)
+		return nil, fmt.Errorf("sql connect: %w", err)
 	}
 
 	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
 	return &MySql{
@@ -59,7 +59,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 	)
 	rows, err := s.db.Query(query, model)
 	if err != nil {
-		return nil, fmt.Errorf("query failed: %w", err)
+		return nil, err
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
@@ -79,7 +79,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 			&product.ManufacturerId,
 			&product.DateModified,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan product: %w", err)
+			return nil, fmt.Errorf("scan: %w", err)
 		}
 		products = append(products, &product)
 	}
@@ -189,7 +189,7 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		time.Now(),
 		productId)
 	if err != nil {
-		return fmt.Errorf("update product: %v", err)
+		return fmt.Errorf("update: %v", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()
@@ -261,7 +261,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		product.DateModified)
 
 	if err != nil {
-		return fmt.Errorf("insert product: %v", err)
+		return fmt.Errorf("insert: %v", err)
 	}
 
 	// Get the last inserted product_id
@@ -355,7 +355,7 @@ func (s *MySql) getProductDescription(productDesc *entity.ProductDescription) ([
 		productDesc.ProductUid,
 		productDesc.LanguageId)
 	if err != nil {
-		return nil, fmt.Errorf("query failed: %w", err)
+		return nil, err
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
@@ -368,7 +368,7 @@ func (s *MySql) getProductDescription(productDesc *entity.ProductDescription) ([
 			&prodDesc.Name,
 			&prodDesc.Description,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan ProductDescription: %w", err)
+			return nil, fmt.Errorf("scan: %w", err)
 		}
 		productsDesc = append(productsDesc, &prodDesc)
 	}
@@ -407,7 +407,7 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 			productDescription.LanguageId)
 	}
 	if err != nil {
-		return fmt.Errorf("update product description: %v", err)
+		return fmt.Errorf("update: %v", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()
@@ -436,7 +436,7 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 			"",
 			"")
 		if err != nil {
-			return fmt.Errorf("insert product description: %v", err)
+			return fmt.Errorf("insert: %v", err)
 		}
 	}
 	return nil
@@ -531,7 +531,7 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 		category.DateModified,
 		category.CategoryId)
 	if err != nil {
-		return fmt.Errorf("update category: %v", err)
+		return fmt.Errorf("update: %v", err)
 	}
 
 	return nil
@@ -540,9 +540,9 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescription) error {
 	query := fmt.Sprintf(
 		`UPDATE %scategory_description SET
-                        name,
-                        description
-			    WHERE category_id = ? AND language_id = ?`,
+                        name=?,
+                        description=?
+			    WHERE category_id=? AND language_id=?`,
 		s.prefix,
 	)
 	res, err := s.db.Exec(query,
@@ -551,7 +551,7 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 		categoryDesc.CategoryId,
 		categoryDesc.LanguageId)
 	if err != nil {
-		return fmt.Errorf("update category description: %v", err)
+		return fmt.Errorf("update: %v", err)
 	}
 
 	rowsAffected, _ := res.RowsAffected()
@@ -572,7 +572,7 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 			categoryDesc.Description)
 
 		if err != nil {
-			return fmt.Errorf("insert category description: %v", err)
+			return fmt.Errorf("insert: %v", err)
 		}
 	}
 
@@ -593,7 +593,7 @@ func (s *MySql) addProductToCategory(product *entity.ProductData) error {
 		product.CategoryUid)
 
 	if err != nil {
-		return fmt.Errorf("product to category insert: %v", err)
+		return fmt.Errorf("insert: %v", err)
 	}
 	return nil
 }
@@ -652,7 +652,7 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	)
 	rows, err := s.db.Query(query, name)
 	if err != nil {
-		return 0, fmt.Errorf("query failed: %w", err)
+		return 0, err
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
@@ -669,7 +669,7 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	query = fmt.Sprintf(`INSERT INTO %smanufacturer (name) VALUES (?)`, s.prefix)
 	res, err := s.db.Exec(query, name)
 	if err != nil {
-		return 0, fmt.Errorf("insert manufacturer: %w", err)
+		return 0, fmt.Errorf("insert: %w", err)
 	}
 
 	manufacturerId, _ := res.LastInsertId()
@@ -677,7 +677,7 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	query = fmt.Sprintf(`INSERT INTO %smanufacturer_to_store (manufacturer_id,Store_id) VALUES (?,0)`, s.prefix)
 	res, err = s.db.Exec(query, name)
 	if err != nil {
-		return 0, fmt.Errorf("insert manufacturer to store: %w", err)
+		return 0, fmt.Errorf("insert: %w", err)
 	}
 
 	return manufacturerId, nil
@@ -693,7 +693,7 @@ func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) 
 	}
 	rows, err := s.db.Query(query)
 	if err != nil {
-		return nil, fmt.Errorf("query failed: %w", err)
+		return nil, err
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
