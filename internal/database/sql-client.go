@@ -512,13 +512,13 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 func (s *MySql) updateCategory(category *entity.Category) error {
 	query := fmt.Sprintf(
 		`UPDATE %scategory SET
-                        parent_id,
-                        parent_uid,
-                        top,
-                        column,
-                        sort_order,
-                        status,
-                        date_modified
+                        parent_id=?,
+                        parent_uid=?,
+                        top=?,
+                        column=?,
+                        sort_order=?,
+                        status=?,
+                        date_modified=?
 			    WHERE category_id = ?`,
 		s.prefix,
 	)
