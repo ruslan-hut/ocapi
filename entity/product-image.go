@@ -16,3 +16,11 @@ type ProductImage struct {
 func (p *ProductImage) Bind(_ *http.Request) error {
 	return validate.Struct(p)
 }
+
+type ProductImageRequest struct {
+	Data []*ProductImage `json:"data" validate:"required,dive"`
+}
+
+func (p *ProductImageRequest) Bind(_ *http.Request) error {
+	return validate.Struct(p)
+}

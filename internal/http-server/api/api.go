@@ -50,6 +50,7 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 		r.Get("/{model}", product.ModelSearch(log, handler))
 		r.Post("/", product.SaveProduct(log, handler))
 		r.Post("/description", product.SaveDescription(log, handler))
+		r.Post("/image", product.SaveImage(log, handler))
 	})
 	router.Route("/category", func(r chi.Router) {
 		r.Post("/", category.SaveCategory(log, handler))
