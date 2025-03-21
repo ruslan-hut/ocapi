@@ -6,11 +6,11 @@ import (
 )
 
 type CategoryData struct {
-	CategoryUID string `json:"category_uid,omitempty" validate:"required"`
-	ParentUID   string `json:"parent_uid,omitempty"`
-	SortOrder   int    `json:"sort_order,omitempty"`
-	Top         int    `json:"top,omitempty" validate:"oneof=0 1"`
-	Active      bool   `json:"active,omitempty"`
+	CategoryUID string `json:"category_uid" validate:"required"`
+	ParentUID   string `json:"parent_uid"`
+	SortOrder   int    `json:"sort_order"`
+	Menu        bool   `json:"menu"`
+	Active      bool   `json:"active"`
 }
 
 func (c *CategoryData) Bind(_ *http.Request) error {

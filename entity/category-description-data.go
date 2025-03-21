@@ -8,7 +8,7 @@ import (
 type CategoryDescriptionData struct {
 	CategoryUid string `json:"category_uid" validate:"required"`
 	LanguageId  int64  `json:"language_id" validate:"required"`
-	Name        string `json:"name,omitempty"`
+	Name        string `json:"name" validate:"required"`
 	Description string `json:"description,omitempty"`
 }
 

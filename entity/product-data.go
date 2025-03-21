@@ -6,7 +6,7 @@ import (
 )
 
 type ProductData struct {
-	Uid          string  `json:"uid" validate:"required"`
+	Uid          string  `json:"product_uid" validate:"required"`
 	Article      string  `json:"article,omitempty"`
 	Price        float32 `json:"price,omitempty"`
 	Quantity     int     `json:"quantity,omitempty"`

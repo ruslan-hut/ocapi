@@ -21,12 +21,16 @@ func CategoryFromCategoryData(category *CategoryData) *Category {
 	if category.Active {
 		status = 1
 	}
+	var top = 0
+	if category.Menu {
+		top = 1
+	}
 
 	return &Category{
 		CategoryUID:  category.CategoryUID,
 		ParentId:     0,
 		ParentUID:    category.ParentUID,
-		Top:          category.Top,
+		Top:          top,
 		Column:       1,
 		SortOrder:    category.SortOrder,
 		Status:       status,
