@@ -684,6 +684,53 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	return manufacturerId, nil
 }
 
+func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) {
+	query := fmt.Sprintf("SELECT * FROM %s", table)
+	if filter != "" {
+		query = fmt.Sprintf("%s WHERE %s", query, filter)
+	}
+	if limit > 0 {
+		query = fmt.Sprintf("%s LIMIT %d", query, limit)
+	}
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get columns: %w", err)
+	}
+
+	results := make([]map[string]interface{}, 0)
+	for rows.Next() {
+		columnPointers := make([]interface{}, len(columns))
+		columnValues := make([]interface{}, len(columns))
+		for i := range columnValues {
+			columnPointers[i] = &columnValues[i]
+		}
+
+		if err = rows.Scan(columnPointers...); err != nil {
+			return nil, fmt.Errorf("scan row: %w", err)
+		}
+
+		rowMap := make(map[string]interface{})
+		for i, colName := range columns {
+			rowMap[colName] = columnValues[i]
+		}
+		results = append(results, rowMap)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration: %w", err)
+	}
+
+	return results, nil
+}
+
 // Placeholder for the TransLit function
 func (s *MySql) TransLit(input string) string {
 	// Transliteration logic here

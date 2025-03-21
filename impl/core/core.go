@@ -13,6 +13,7 @@ type Repository interface {
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
+	ReadTable(table, filter string, limit int) (interface{}, error)
 }
 
 type MessageService interface {
