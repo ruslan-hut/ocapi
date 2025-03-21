@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
@@ -719,7 +720,16 @@ func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) 
 
 		rowMap := make(map[string]interface{})
 		for i, colName := range columns {
-			rowMap[colName] = columnValues[i]
+			if str, ok := columnValues[i].([]byte); ok {
+				decodedValue, err := base64.StdEncoding.DecodeString(string(str))
+				if err != nil {
+					rowMap[colName] = string(str)
+				} else {
+					rowMap[colName] = string(decodedValue)
+				}
+			} else {
+				rowMap[colName] = columnValues[i]
+			}
 		}
 		results = append(results, rowMap)
 	}
