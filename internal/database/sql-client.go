@@ -217,7 +217,7 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		s.prefix,
 	)
 
-	res, err := s.db.Exec(query,
+	_, err = s.db.Exec(query,
 		product.Sku,
 		product.Quantity,
 		product.StockStatusId,
@@ -230,10 +230,13 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		return fmt.Errorf("update: %v", err)
 	}
 
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("product id %d not found; model %s", productId, product.Model)
+	categoryId, err := s.getCategoryByUID(productData.CategoryUid)
+	if err == nil {
+		if err = s.addProductToCategory(productId, categoryId); err != nil {
+			return fmt.Errorf("add to category: %v", err)
+		}
 	}
+
 	return nil
 }
 
@@ -312,8 +315,11 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		return err
 	}
 
-	if err = s.addProductToCategory(productData); err != nil {
-		return err
+	categoryId, err := s.getCategoryByUID(productData.CategoryUid)
+	if err == nil {
+		if err = s.addProductToCategory(productId, categoryId); err != nil {
+			return err
+		}
 	}
 
 	if err = s.addProductToLayout(productId); err != nil {
@@ -715,7 +721,8 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 }
 
 // Helper function to add product to category
-func (s *MySql) addProductToCategory(product *entity.ProductData) error {
+func (s *MySql) addProductToCategory(productId, categoryId int64) error {
+
 	query := fmt.Sprintf(
 		`INSERT INTO %sproduct_to_category (
                         product_id,
@@ -724,8 +731,8 @@ func (s *MySql) addProductToCategory(product *entity.ProductData) error {
 		s.prefix)
 
 	_, err := s.db.Exec(query,
-		product.Uid,
-		product.CategoryUid)
+		productId,
+		categoryId)
 
 	if err != nil {
 		return fmt.Errorf("insert: %v", err)

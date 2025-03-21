@@ -12,7 +12,7 @@ type ProductData struct {
 	Quantity     int     `json:"quantity,omitempty"`
 	Manufacturer string  `json:"manufacturer,omitempty"`
 	Active       bool    `json:"active,omitempty"`
-	CategoryUid  int64   `json:"category_uid,omitempty"`
+	CategoryUid  string  `json:"category_uid,omitempty"`
 }
 
 func (p *ProductData) Bind(_ *http.Request) error {
