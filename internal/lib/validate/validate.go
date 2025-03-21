@@ -30,12 +30,15 @@ func Struct(s interface{}) error {
 			if len(message) > 0 {
 				message += "; "
 			}
-			//field, _ := reflect.TypeOf(s).Elem().FieldByName(fieldErr.StructField())
-			//jsonTag := field.Tag.Get("json")
-			//if jsonTag == "" {
-			//	jsonTag = fieldErr.Field()
-			//}
-			message += fmt.Sprintf("%s %s; %s", fieldErr.Field(), fieldErr.Tag(), fieldErr.Error())
+			fieldName := fieldErr.Field()
+			field, ok := reflect.TypeOf(s).Elem().FieldByName(fieldName)
+			if ok {
+				fieldJSONName, okk := field.Tag.Lookup("json")
+				if okk {
+					fieldName = fieldJSONName
+				}
+			}
+			message += fmt.Sprintf("%s %s", fieldName, fieldErr.Tag())
 		}
 		return fmt.Errorf(message)
 	} else if errors.As(err, &invalidValidationError) {
