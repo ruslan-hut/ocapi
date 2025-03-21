@@ -37,7 +37,8 @@ func SaveCategory(log *slog.Logger, handler Core) http.HandlerFunc {
 		err := handler.LoadCategories(body.Data)
 		if err != nil {
 			logger.Error("load categories", sl.Err(err))
-			render.JSON(w, r, response.Error(fmt.Sprintf("Save data failed: %v", err)))
+			render.Status(r, 400)
+			render.JSON(w, r, response.Error(fmt.Sprintf("Save data: %v", err)))
 			return
 		}
 		logger.With(slog.Int("size", len(body.Data))).Debug("category data saved")

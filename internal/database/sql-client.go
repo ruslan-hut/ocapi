@@ -516,7 +516,6 @@ func (s *MySql) updateCategory(category *entity.Category) error {
                         parent_id=?,
                         parent_uid=?,
                         top=?,
-                        column=?,
                         sort_order=?,
                         status=?,
                         date_modified=?
@@ -527,7 +526,6 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 		category.ParentId,
 		category.ParentUID,
 		category.Top,
-		category.Column,
 		category.SortOrder,
 		category.Status,
 		category.DateModified,

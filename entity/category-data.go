@@ -9,7 +9,7 @@ type CategoryData struct {
 	CategoryUID string `json:"category_uid,omitempty" validate:"required"`
 	ParentUID   string `json:"parent_uid,omitempty"`
 	SortOrder   int    `json:"sort_order,omitempty"`
-	Top         int    `json:"top,omitempty"`
+	Top         int    `json:"top,omitempty" validate:"in=0 1"`
 	Active      bool   `json:"active,omitempty"`
 }
 
