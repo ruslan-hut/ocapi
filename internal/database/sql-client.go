@@ -538,6 +538,12 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 }
 
 func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescription) error {
+	if categoryDesc.CategoryId == 0 {
+		return fmt.Errorf("category id not provided")
+	}
+	if categoryDesc.LanguageId == 0 {
+		return fmt.Errorf("language id not provided")
+	}
 	query := fmt.Sprintf(
 		`UPDATE %scategory_description SET
                         name=?,
@@ -558,18 +564,25 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 	if rowsAffected == 0 {
 		query = fmt.Sprintf(
 			`INSERT INTO %scategory_description (
-                       category_id,
-                       language_id,
-                       name,
-                       description)
-			VALUES (?, ?, ?, ?)`,
+			   category_id,
+			   language_id,
+			   name,
+			   description,
+				meta_title,
+				meta_description,
+				meta_keyword)
+			VALUES (?,?,?,?,?,?,?)`,
 			s.prefix)
 
 		_, err = s.db.Exec(query,
 			categoryDesc.CategoryId,
 			categoryDesc.LanguageId,
 			categoryDesc.Name,
-			categoryDesc.Description)
+			categoryDesc.Description,
+			categoryDesc.MetaTitle,
+			categoryDesc.MetaDescription,
+			categoryDesc.MetaKeyword,
+		)
 
 		if err != nil {
 			return fmt.Errorf("insert: %v", err)
