@@ -502,7 +502,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	query = fmt.Sprintf(`INSERT INTO %scategory (category_uid, date_added) VALUES (?,?)`, s.prefix)
 	res, err := s.db.Exec(query, uid, time.Now())
 	if err != nil {
-		return 0, fmt.Errorf("insert category: %w", err)
+		return 0, fmt.Errorf("insert: %w", err)
 	}
 
 	categoryId, _ := res.LastInsertId()
@@ -537,6 +537,45 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 	return nil
 }
 
+func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.CategoryDescription, error) {
+	query := fmt.Sprintf(
+		`SELECT
+					name,
+					description,
+					meta_title,
+					meta_description,
+					meta_keyword,
+					seo_keyword
+				FROM %scategory_description 
+				WHERE category_id=? AND language_id=?`,
+		s.prefix,
+	)
+	rows, err := s.db.Query(query, categoryId, languageId)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+
+	for rows.Next() {
+		var categoryDesc entity.CategoryDescription
+		if err = rows.Scan(
+			&categoryDesc.Name,
+			&categoryDesc.Description,
+			&categoryDesc.MetaTitle,
+			&categoryDesc.MetaDescription,
+			&categoryDesc.MetaKeyword,
+			&categoryDesc.SeoKeyword,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		return &categoryDesc, nil
+	}
+
+	return nil, nil
+}
+
 func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescription) error {
 	if categoryDesc.CategoryId == 0 {
 		return fmt.Errorf("category id not provided")
@@ -544,25 +583,26 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 	if categoryDesc.LanguageId == 0 {
 		return fmt.Errorf("language id not provided")
 	}
-	query := fmt.Sprintf(
-		`UPDATE %scategory_description SET
-                        name=?,
-                        description=?
-			    WHERE category_id=? AND language_id=?`,
-		s.prefix,
-	)
-	res, err := s.db.Exec(query,
-		categoryDesc.Name,
-		categoryDesc.Description,
-		categoryDesc.CategoryId,
-		categoryDesc.LanguageId)
+
+	description, err := s.findCategoryDescription(categoryDesc.CategoryId, categoryDesc.LanguageId)
 	if err != nil {
-		return fmt.Errorf("update: %v", err)
+		return fmt.Errorf("lookup description: %v", err)
 	}
 
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 0 {
-		query = fmt.Sprintf(
+	if description != nil {
+		query := fmt.Sprintf(`UPDATE %scategory_description SET name=?, description=?
+			    WHERE category_id=? AND language_id=?`, s.prefix,
+		)
+		_, err = s.db.Exec(query,
+			categoryDesc.Name,
+			categoryDesc.Description,
+			categoryDesc.CategoryId,
+			categoryDesc.LanguageId)
+		if err != nil {
+			return fmt.Errorf("update: %v", err)
+		}
+	} else {
+		query := fmt.Sprintf(
 			`INSERT INTO %scategory_description (
 			   category_id,
 			   language_id,
@@ -570,7 +610,8 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 			   description,
 				meta_title,
 				meta_description,
-				meta_keyword)
+				meta_keyword,
+				seo_keyword)
 			VALUES (?,?,?,?,?,?,?)`,
 			s.prefix)
 
@@ -582,13 +623,12 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 			categoryDesc.MetaTitle,
 			categoryDesc.MetaDescription,
 			categoryDesc.MetaKeyword,
+			categoryDesc.SeoKeyword,
 		)
-
 		if err != nil {
 			return fmt.Errorf("insert: %v", err)
 		}
 	}
-
 	return nil
 }
 
