@@ -172,6 +172,29 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
+func (s *MySql) UpdateProductImage(productUid string, image string) error {
+	productId, err := s.getProductByUID(productUid)
+	if err != nil {
+		return fmt.Errorf("product search failed: %v", err)
+	}
+
+	query := fmt.Sprintf(
+		`UPDATE %sproduct SET
+				image = ?
+			    WHERE product_id = ?`,
+		s.prefix,
+	)
+
+	_, err = s.db.Exec(query,
+		image,
+		productId)
+	if err != nil {
+		return fmt.Errorf("update: %v", err)
+	}
+
+	return nil
+}
+
 func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) error {
 
 	product := entity.ProductFromProductData(productData)

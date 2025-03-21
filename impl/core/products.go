@@ -1,8 +1,11 @@
 package core
 
 import (
+	"encoding/base64"
 	"fmt"
 	"ocapi/entity"
+	"os"
+	"path/filepath"
 )
 
 func (c *Core) FindModel(model string) ([]*entity.Product, error) {
@@ -37,6 +40,33 @@ func (c *Core) LoadProductDescriptions(products []*entity.ProductDescription) er
 func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 	if c.repo == nil {
 		return fmt.Errorf("repository not initialized")
+	}
+
+	for _, product := range products {
+		// Decode base64 image data
+		imageData, err := base64.StdEncoding.DecodeString(product.FileData)
+		if err != nil {
+			return fmt.Errorf("failed to decode base64 image for product %s: %v", product.ProductUid, err)
+		}
+
+		// Define the image file path
+		imagePath := filepath.Join(c.imagePath, product.FileUid, ".png")
+
+		// Save image file
+		err = os.WriteFile(imagePath, imageData, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to save image for product %s: %v", product.ProductUid, err)
+		}
+
+		if product.IsMain {
+			imageUrl := fmt.Sprintf("%s%s.png", c.imageUrl, product.FileUid)
+			// Update image path in repository
+			err = c.repo.UpdateProductImage(product.ProductUid, imageUrl)
+
+			if err != nil {
+				return fmt.Errorf("failed to update product image %s: %v", product.ProductUid, err)
+			}
+		}
 	}
 
 	return nil

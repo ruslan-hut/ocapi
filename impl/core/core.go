@@ -14,6 +14,7 @@ type Repository interface {
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
 	ReadTable(table, filter string, limit int) (interface{}, error)
+	UpdateProductImage(productUid string, image string) error
 }
 
 type MessageService interface {
