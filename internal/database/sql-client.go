@@ -723,17 +723,17 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 // Helper function to add product to category
 func (s *MySql) addProductToCategory(productId, categoryId int64) error {
 
-	query := fmt.Sprintf(
-		`INSERT INTO %sproduct_to_category (
+	query := fmt.Sprintf(`DELETE FROM %sproduct_to_category WHERE product_id=?`, s.prefix)
+	_, err := s.db.Exec(query, productId)
+	if err != nil {
+		return fmt.Errorf("delete: %v", err)
+	}
+
+	query = fmt.Sprintf(`INSERT INTO %sproduct_to_category (
                         product_id,
                         category_id)
-			VALUES (?, ?)`,
-		s.prefix)
-
-	_, err := s.db.Exec(query,
-		productId,
-		categoryId)
-
+			VALUES (?, ?)`, s.prefix)
+	_, err = s.db.Exec(query, productId, categoryId)
 	if err != nil {
 		return fmt.Errorf("insert: %v", err)
 	}
