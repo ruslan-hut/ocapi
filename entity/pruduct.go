@@ -6,7 +6,8 @@ import (
 
 type Product struct {
 	Id             int64     `json:"product_id" bson:"product_id" validate:"omitempty"`
-	Model          string    `json:"model,omitempty" bson:"model" validate:"omitempty"`
+	Model          string    `json:"model" bson:"model" validate:"omitempty"`
+	Code           string    `json:"code" bson:"model" validate:"omitempty"`
 	Sku            string    `json:"sku,omitempty" bson:"sku" validate:"omitempty"`
 	Upc            string    `json:"upc,omitempty" bson:"upc" validate:"omitempty"`
 	Ean            string    `json:"ean,omitempty" bson:"ean" validate:"omitempty"`
@@ -55,6 +56,7 @@ func ProductFromProductData(product *ProductData) *Product {
 
 	return &Product{
 		Model:          product.Uid,
+		Code:           product.Uid,
 		Sku:            product.Article,
 		Quantity:       product.Quantity,
 		Minimum:        1,

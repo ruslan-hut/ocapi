@@ -48,6 +48,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if err = sdb.addColumnIfNotExists("product_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
+	if err = sdb.addColumnIfNotExists("product", "code", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
 
 	return sdb, nil
 }
@@ -262,6 +265,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 	query := fmt.Sprintf(
 		`INSERT INTO %sproduct (
 				model,
+			    code,
 				sku,
 				quantity,
 				minimum,
@@ -283,11 +287,12 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
                 sort_order,
 				date_added,
 				date_modified)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.prefix)
 	// Insert product into the product table
 	res, err := s.db.Exec(query,
 		product.Model,
+		product.Code,
 		product.Sku,
 		product.Quantity,
 		product.Minimum,
