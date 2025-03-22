@@ -283,6 +283,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		"weight_class_id": product.WeightClassId,
 		"length_class_id": product.LengthClassId,
 		"date_added":      product.DateAdded,
+		"date_modified":   product.DateModified,
 	}
 
 	var colNames []string
