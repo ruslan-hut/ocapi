@@ -291,9 +291,10 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 				status,
                 tax_class_id,
                 sort_order,
+			    meta_robots,
 				date_added,
 				date_modified)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.prefix)
 	// Insert product into the product table
 	res, err := s.db.Exec(query,
@@ -324,6 +325,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		product.Status,
 		product.TaxClassId,
 		product.SortOrder,
+		"",
 		product.DateAdded,
 		product.DateModified)
 
