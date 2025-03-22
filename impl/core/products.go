@@ -47,16 +47,16 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 		// Decode base64 image data
 		imageData, err := base64.StdEncoding.DecodeString(product.FileData)
 		if err != nil {
-			return fmt.Errorf("decode base64 image %s: %v", product.ProductUid, err)
+			return fmt.Errorf("decode base64 %s: %v", product.ProductUid, err)
 		}
 
-		// Define the image file path
-		imagePath := filepath.Join(c.imagePath, product.FileUid, fileExt)
+		fileName := fmt.Sprintf("%s%s", product.FileUid, fileExt)
+		imagePath := filepath.Join(c.imagePath, fileName)
 
 		// Save image file
 		err = os.WriteFile(imagePath, imageData, 0644)
 		if err != nil {
-			return fmt.Errorf("save product image %s: %v", product.ProductUid, err)
+			return fmt.Errorf("save image %s: %v", product.ProductUid, err)
 		}
 
 		if product.IsMain {
@@ -65,7 +65,7 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			err = c.repo.UpdateProductImage(product.ProductUid, imageUrl)
 
 			if err != nil {
-				return fmt.Errorf("update product image %s: %v", product.ProductUid, err)
+				return fmt.Errorf("update image %s: %v", product.ProductUid, err)
 			}
 		}
 	}

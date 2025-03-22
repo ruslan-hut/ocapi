@@ -37,6 +37,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		structure: make(map[string]map[string]Column),
 	}
 
+	if err = sdb.addColumnIfNotExists("product", "batch_uid", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
 	if err = sdb.addColumnIfNotExists("category", "parent_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
@@ -215,7 +218,8 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 				price = ?, 
 				manufacturer_id = ?, 
 				status = ?, 
-				date_modified = ? 
+				date_modified = ?,
+                batch_uid = ?
 			    WHERE product_id = ?`,
 		s.prefix,
 	)
@@ -228,6 +232,7 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		manufacturerId,
 		product.Status,
 		time.Now(),
+		product.BatchUID,
 		productId)
 	if err != nil {
 		return fmt.Errorf("update: %v", err)
@@ -272,6 +277,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		"length_class_id": product.LengthClassId,
 		"date_added":      product.DateAdded,
 		"date_modified":   product.DateModified,
+		"batch_uid":       product.BatchUID,
 	}
 
 	productId, err := s.insert("product", userData)

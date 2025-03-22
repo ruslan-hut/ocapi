@@ -31,6 +31,7 @@ type Product struct {
 	DateAdded      time.Time `json:"date_added,omitempty" bson:"date_added" validate:"omitempty"`
 	DateModified   time.Time `json:"date_modified,omitempty" bson:"date_modified" validate:"omitempty"`
 	Viewed         int       `json:"viewed,omitempty" bson:"viewed" validate:"omitempty"`
+	BatchUID       string    `json:"batch_uid" bson:"batch_uid" validate:"omitempty"`
 }
 
 func ProductFromProductData(product *ProductData) *Product {
@@ -69,6 +70,7 @@ func ProductFromProductData(product *ProductData) *Product {
 		Status:         status,
 		TaxClassId:     9,
 		SortOrder:      0,
+		BatchUID:       product.BatchUID,
 		//DateAdded:      time.Now(),
 		//DateModified:   time.Now(),
 	}

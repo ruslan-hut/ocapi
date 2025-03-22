@@ -13,6 +13,7 @@ type ProductData struct {
 	Manufacturer string  `json:"manufacturer,omitempty"`
 	Active       bool    `json:"active,omitempty"`
 	CategoryUid  string  `json:"category_uid,omitempty"`
+	BatchUID     string  `json:"batch_uid,omitempty"`
 }
 
 func (p *ProductData) Bind(_ *http.Request) error {
@@ -20,7 +21,10 @@ func (p *ProductData) Bind(_ *http.Request) error {
 }
 
 type ProductDataRequest struct {
-	Data []*ProductData `json:"data" validate:"required,dive"`
+	Full  bool           `json:"full_update"`
+	Page  int            `json:"page"`
+	Total int            `json:"total"`
+	Data  []*ProductData `json:"data" validate:"required,dive"`
 }
 
 func (p *ProductDataRequest) Bind(_ *http.Request) error {

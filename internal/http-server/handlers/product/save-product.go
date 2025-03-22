@@ -33,6 +33,11 @@ func SaveProduct(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Failed to decode: %v", err)))
 			return
 		}
+		logger = logger.With(
+			slog.Bool("full", body.Full),
+			slog.Int("page", body.Page),
+			slog.Int("total", body.Total),
+		)
 
 		err := handler.LoadProducts(body.Data)
 		if err != nil {
