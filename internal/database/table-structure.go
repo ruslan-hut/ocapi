@@ -52,7 +52,8 @@ func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, 
 	columns := make(map[string]Column)
 
 	for rows.Next() {
-		var colName, colDefault, isNullable, dataType string
+		var colName, isNullable, dataType string
+		var colDefault sql.NullString
 
 		// Считываем строку
 		if err = rows.Scan(&colName, &colDefault, &isNullable, &dataType); err != nil {
@@ -67,8 +68,8 @@ func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, 
 		// то это будет корректно считаться как nil.
 		// В некоторых СУБД пустая строка и NULL могут отличаться.
 		var defValPtr *string
-		if colDefault != "" {
-			defValPtr = &colDefault
+		if colDefault.Valid {
+			defValPtr = &colDefault.String
 		}
 
 		columns[colName] = Column{
