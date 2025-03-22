@@ -294,9 +294,10 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 			    meta_robots,
 			    seo_canonical,
 				availableCarriers,
+				delivery_time,
 				date_added,
 				date_modified)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.prefix)
 	// Insert product into the product table
 	res, err := s.db.Exec(query,
@@ -330,6 +331,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		"",
 		"",
 		"",
+		0,
 		product.DateAdded,
 		product.DateModified)
 
