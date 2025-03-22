@@ -108,7 +108,7 @@ func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
 	for _, productData := range productsData {
 		productId, err := s.getProductByUID(productData.Uid)
 		if err != nil {
-			return fmt.Errorf("product search failed: %v", err)
+			return fmt.Errorf("product search: %v", err)
 		}
 
 		if productId == 0 {
@@ -118,7 +118,7 @@ func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("save product %s: %v", productData.Uid, err)
+			return fmt.Errorf("product %s: %v", productData.Uid, err)
 		}
 	}
 	return nil
@@ -182,7 +182,7 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 func (s *MySql) UpdateProductImage(productUid string, image string) error {
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
-		return fmt.Errorf("product search failed: %v", err)
+		return fmt.Errorf("product search: %v", err)
 	}
 
 	if productId == 0 {
@@ -268,6 +268,11 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 			    code,
 				sku,
 			    upc,
+			    ean,
+			    jan,
+			    isbn,
+			    mpn,
+			    location,
 				quantity,
 				minimum,
 				subtract,
@@ -288,7 +293,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
                 sort_order,
 				date_added,
 				date_modified)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.prefix)
 	// Insert product into the product table
 	res, err := s.db.Exec(query,
@@ -296,6 +301,11 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		product.Code,
 		product.Sku,
 		product.Upc,
+		product.Ean,
+		product.Jan,
+		product.Isbn,
+		product.Mpn,
+		product.Location,
 		product.Quantity,
 		product.Minimum,
 		product.Subtract,
