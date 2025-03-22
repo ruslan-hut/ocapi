@@ -1,10 +1,10 @@
 package logger
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -49,5 +49,5 @@ func SetupLogger(env, path string) *slog.Logger {
 }
 
 func logFilePath(path string) string {
-	return fmt.Sprintf("%s/%s", path, logFileName)
+	return filepath.Join(path, logFileName)
 }
