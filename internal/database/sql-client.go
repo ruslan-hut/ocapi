@@ -129,6 +129,10 @@ func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescri
 			return fmt.Errorf("product search: %v", err)
 		}
 
+		if productId == 0 {
+			return fmt.Errorf("product decription: uid %s not found", productDescData.ProductUid)
+		}
+
 		err = s.upsertProductDescription(productId, productDescData)
 		if err != nil {
 			return fmt.Errorf("product description %s: %v", productDescData.ProductUid, err)
@@ -176,6 +180,10 @@ func (s *MySql) UpdateProductImage(productUid string, image string) error {
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
 		return fmt.Errorf("product search failed: %v", err)
+	}
+
+	if productId == 0 {
+		return fmt.Errorf("product decription: uid %s not found", productUid)
 	}
 
 	query := fmt.Sprintf(
@@ -245,7 +253,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 	product := entity.ProductFromProductData(productData)
 	product.DateAdded = time.Now()
 
-	manufacturerId, err := s.getProductByUID(productData.Manufacturer)
+	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
 	if err != nil {
 		return fmt.Errorf("manufacturer search: %v", err)
 	}
@@ -558,7 +566,7 @@ func (s *MySql) getProductByUID(uid string) (int64, error) {
 		return productId, nil
 	}
 
-	return 0, fmt.Errorf("no product found with uid: %s", uid)
+	return 0, nil
 }
 
 func (s *MySql) getCategoryByUID(uid string) (int64, error) {
