@@ -30,12 +30,18 @@ type Core struct {
 	log       *slog.Logger
 }
 
-func New(repo Repository, key string, log *slog.Logger) *Core {
+func New(log *slog.Logger) *Core {
 	return &Core{
-		repo:    repo,
-		authKey: key,
-		log:     log.With(sl.Module("core")),
+		log: log.With(sl.Module("core")),
 	}
+}
+
+func (c *Core) SetRepository(repo Repository) {
+	c.repo = repo
+}
+
+func (c *Core) SetAuthKey(key string) {
+	c.authKey = key
 }
 
 func (c *Core) SetImageParameters(imagePath, imageUrl string) {

@@ -23,11 +23,16 @@ func main() {
 	lg.Info("starting ocapi", slog.String("config", *configPath), slog.String("env", conf.Env))
 	lg.Debug("debug messages enabled")
 
+	handler := core.New(lg)
+	handler.SetAuthKey(conf.Listen.ApiKey)
+	handler.SetImageParameters(conf.Images.Path, conf.Images.Url)
+
 	db, err := database.NewSQLClient(conf)
 	if err != nil {
 		lg.Error("mysql client", sl.Err(err))
 	}
 	if db != nil {
+		handler.SetRepository(db)
 		lg.Info("mysql client initialized",
 			slog.String("host", conf.SQL.HostName),
 			slog.String("port", conf.SQL.Port),
@@ -36,10 +41,6 @@ func main() {
 		)
 		defer db.Close()
 	}
-
-	handler := core.New(db, conf.Listen.ApiKey, lg)
-
-	handler.SetImageParameters(conf.Images.Path, conf.Images.Url)
 
 	//if conf.Telegram.Enabled {
 	//	tg, e := telegram.New(conf.Telegram.ApiKey, lg)

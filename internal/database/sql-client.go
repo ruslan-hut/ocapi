@@ -27,8 +27,15 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, fmt.Errorf("sql connect: %w", err)
 	}
 
-	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("ping database: %w", err)
+	// try ping three times with 30 seconds interval; wait for database to start
+	for i := 0; i < 3; i++ {
+		if err = db.Ping(); err == nil {
+			break
+		}
+		if i == 2 {
+			return nil, fmt.Errorf("ping database: %w", err)
+		}
+		time.Sleep(30 * time.Second)
 	}
 
 	sdb := &MySql{
@@ -100,9 +107,6 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 }
 
 func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
-	if err := s.db.Ping(); err != nil {
-		return fmt.Errorf("database connection: %w", err)
-	}
 	for _, productData := range productsData {
 		productId, err := s.getProductByUID(productData.Uid)
 		if err != nil {
@@ -123,9 +127,6 @@ func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
 }
 
 func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescription) error {
-	if err := s.db.Ping(); err != nil {
-		return fmt.Errorf("database connection: %w", err)
-	}
 	for _, productDescData := range productsDescData {
 
 		productId, err := s.getProductByUID(productDescData.ProductUid)
@@ -146,9 +147,6 @@ func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescri
 }
 
 func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
-	if err := s.db.Ping(); err != nil {
-		return fmt.Errorf("database connection: %w", err)
-	}
 	for _, categoryData := range categoriesData {
 		categoryId, err := s.getCategoryByUID(categoryData.CategoryUID)
 		if err != nil {
@@ -167,9 +165,6 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 }
 
 func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error {
-	if err := s.db.Ping(); err != nil {
-		return fmt.Errorf("database connection: %w", err)
-	}
 	for _, categoryDescData := range categoriesDescData {
 		categoryId, err := s.getCategoryByUID(categoryDescData.CategoryUid)
 		if err != nil {
@@ -187,9 +182,6 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 }
 
 func (s *MySql) UpdateProductImage(productUid string, image string) error {
-	if err := s.db.Ping(); err != nil {
-		return fmt.Errorf("database connection: %w", err)
-	}
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
 		return fmt.Errorf("product search: %v", err)
