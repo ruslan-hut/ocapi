@@ -317,10 +317,14 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 			colNames = append(colNames, colName)
 			placeholders = append(placeholders, "?")
 
-			// В реальном проекте стоит смотреть на colInfo.DataType,
-			// и если это числовое поле, то вставлять 0, а если строковое — "" и т.п.
-			// Здесь для простоты вставим пустую строку:
-			values = append(values, "")
+			switch colInfo.DataType {
+			case "int", "bigint", "smallint", "tinyint", "decimal", "float", "double":
+				values = append(values, 0)
+			case "varchar", "text", "char", "blob":
+				values = append(values, "")
+			default:
+				values = append(values, nil)
+			}
 		}
 	}
 	if len(colNames) == 0 {
