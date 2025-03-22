@@ -174,24 +174,25 @@ func (s *MySql) insert(table string, userData map[string]interface{}) (int64, er
 		}
 	}
 	if len(colNames) == 0 {
-		return 0, errors.New("no columns to insert")
+		return 0, fmt.Errorf("no columns found in table %s", table)
 	}
 	// Формируем сам запрос INSERT
 	insertSQL := fmt.Sprintf(
-		"INSERT INTO %sproduct (%s) VALUES (%s)",
+		"INSERT INTO %s%s (%s) VALUES (%s)",
 		s.prefix,
+		table,
 		strings.Join(colNames, ", "),
 		strings.Join(placeholders, ", "),
 	)
 	res, err := s.db.Exec(insertSQL, values...)
 	if err != nil {
-		return 0, fmt.Errorf("insert: %w", err)
+		return 0, fmt.Errorf("%s insert: %w", table, err)
 	}
 
 	// Get the last inserted product_id
 	rowId, err := res.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("get last insert id: %v", err)
+		return 0, fmt.Errorf("%s get last insert id: %v", table, err)
 	}
 
 	return rowId, nil
