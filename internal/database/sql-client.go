@@ -8,12 +8,14 @@ import (
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"ocapi/entity"
 	"ocapi/internal/config"
+	"strings"
 	"time"
 )
 
 type MySql struct {
 	db     *sql.DB
 	prefix string
+	tables Tables
 }
 
 func NewSQLClient(conf *config.Config) (*MySql, error) {
@@ -36,6 +38,11 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		prefix: conf.SQL.Prefix,
 	}
 
+	sdb.tables, err = sdb.LoadTablesStructure()
+	if err != nil {
+		return nil, fmt.Errorf("load tables structure: %w", err)
+	}
+
 	if err = sdb.addColumnIfNotExists("category", "parent_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
@@ -46,9 +53,6 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, err
 	}
 	if err = sdb.addColumnIfNotExists("product_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
-		return nil, err
-	}
-	if err = sdb.addColumnIfNotExists("product", "code", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
 
@@ -262,85 +266,71 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 	}
 	product.ManufacturerId = manufacturerId
 
-	query := fmt.Sprintf(
-		`INSERT INTO %sproduct (
-				model,
-			    code,
-				sku,
-			    upc,
-			    ean,
-			    jan,
-			    isbn,
-			    mpn,
-			    location,
-				quantity,
-				minimum,
-				subtract,
-				stock_status_id,
-				date_available,
-				manufacturer_id,
-                shipping,
-				price,
-                points, 
-                weight, 
-                weight_class_id,
-				length,
-				width,
-				height,
-                length_class_id,
-				status,
-                tax_class_id,
-                sort_order,
-			    meta_robots,
-			    seo_canonical,
-				availableCarriers,
-				delivery_time,
-			    delivery_time_in_stock,
-			   	delivery_time_out_stock,
-				date_added,
-				date_modified)
-			VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		s.prefix)
-	// Insert product into the product table
-	res, err := s.db.Exec(query,
-		product.Model,
-		product.Code,
-		product.Sku,
-		product.Upc,
-		product.Ean,
-		product.Jan,
-		product.Isbn,
-		product.Mpn,
-		product.Location,
-		product.Quantity,
-		product.Minimum,
-		product.Subtract,
-		product.StockStatusId,
-		product.DateAvailable,
-		product.ManufacturerId,
-		product.Shipping,
-		product.Price,
-		product.Points,
-		product.Weight,
-		product.WeightClassId,
-		product.Length,
-		product.Width,
-		product.Height,
-		product.LengthClassId,
-		product.Status,
-		product.TaxClassId,
-		product.SortOrder,
-		"",
-		"",
-		"",
-		0,
-		"",
-		"",
-		product.DateAdded,
-		product.DateModified)
+	// known columns
+	userData := map[string]interface{}{
+		"model":           product.Model,
+		"sku":             product.Sku,
+		"price":           product.Price,
+		"manufacturer_id": product.ManufacturerId,
+		"quantity":        product.Quantity,
+		"status":          product.Status,
+		"stock_status_id": product.StockStatusId,
+		"minimum":         product.Minimum,
+		"subtract":        product.Subtract,
+		"date_available":  product.DateAvailable,
+		"shipping":        product.Shipping,
+		"tax_class_id":    product.TaxClassId,
+		"weight_class_id": product.WeightClassId,
+		"length_class_id": product.LengthClassId,
+		"date_added":      product.DateAdded,
+	}
 
+	var colNames []string
+	var placeholders []string
+	var values []interface{}
+
+	// Проходим по всем колонкам таблицы, которые были закешированы
+	for colName, colInfo := range s.tables.Product {
+		// Смотрим, есть ли значение для этой колонки в userData
+		if userVal, ok := userData[colName]; ok {
+			// Пользовательская структура содержит данные — вставляем
+			colNames = append(colNames, colName)
+			placeholders = append(placeholders, "?")
+			values = append(values, userVal)
+		} else {
+			// Данных от пользователя нет
+			// Если у поля есть DEFAULT в БД — лучше пропустить, чтобы СУБД подставила дефолт
+			if colInfo.DefaultValue != nil {
+				continue
+			}
+			// Если поле допускает NULL, то тоже пропустим — тогда в БД попадёт NULL
+			// (или будет использован DEFAULT NULL).
+			if colInfo.IsNullable {
+				continue
+			}
+			// Если мы здесь — поле NOT NULL, без DEFAULT => нужно что-то явно вставить
+			colNames = append(colNames, colName)
+			placeholders = append(placeholders, "?")
+
+			// В реальном проекте стоит смотреть на colInfo.DataType,
+			// и если это числовое поле, то вставлять 0, а если строковое — "" и т.п.
+			// Здесь для простоты вставим пустую строку:
+			values = append(values, "")
+		}
+	}
+	if len(colNames) == 0 {
+		return errors.New("no columns to insert")
+	}
+	// Формируем сам запрос INSERT
+	insertSQL := fmt.Sprintf(
+		"INSERT INTO %sproduct (%s) VALUES (%s)",
+		s.prefix,
+		strings.Join(colNames, ", "),
+		strings.Join(placeholders, ", "),
+	)
+	res, err := s.db.Exec(insertSQL, values...)
 	if err != nil {
-		return fmt.Errorf("insert: %v", err)
+		return fmt.Errorf("insert: %w", err)
 	}
 
 	// Get the last inserted product_id
@@ -774,27 +764,6 @@ func (s *MySql) addProductToCategory(productId, categoryId int64) error {
 	_, err = s.db.Exec(query, productId, categoryId)
 	if err != nil {
 		return fmt.Errorf("insert: %v", err)
-	}
-	return nil
-}
-
-func (s *MySql) addColumnIfNotExists(tableName, columnName, columnType string) error {
-	// Check if the column exists
-	query := fmt.Sprintf(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s%s' AND COLUMN_NAME = '%s'`,
-		s.prefix, tableName, columnName)
-	var column string
-	err := s.db.QueryRow(query).Scan(&column)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// Column does not exist, so add it
-			alterQuery := fmt.Sprintf(`ALTER TABLE %s%s ADD COLUMN %s %s`, s.prefix, tableName, columnName, columnType)
-			_, err = s.db.Exec(alterQuery)
-			if err != nil {
-				return fmt.Errorf("add column %s to table %s: %w", columnName, tableName, err)
-			}
-		} else {
-			return fmt.Errorf("checking column %s existence in %s: %w", columnName, tableName, err)
-		}
 	}
 	return nil
 }
