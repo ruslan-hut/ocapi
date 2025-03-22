@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type Tables struct {
@@ -64,10 +65,6 @@ func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, 
 		// Преобразуем флаг "YES"/"NO" в логический
 		nullable := isNullable == "YES"
 
-		// Чтобы отличить "NULL в базе" от "пустой строки", храним DefaultValue в *string
-		// Если colDefault == "" (пустая строка) и колонка в БД действительно имеет DEFAULT=NULL,
-		// то это будет корректно считаться как nil.
-		// В некоторых СУБД пустая строка и NULL могут отличаться.
 		var defValPtr *string
 		if colDefault.Valid {
 			defValPtr = &colDefault.String
@@ -108,4 +105,94 @@ func (s *MySql) addColumnIfNotExists(tableName, columnName, columnType string) e
 		}
 	}
 	return nil
+}
+
+func (s *MySql) readStructure(table string) (map[string]Column, error) {
+	var err error
+	// Запросим структуру таблицы из кэша
+	if s.structure == nil {
+		return nil, errors.New("structure cache is not initialized")
+	}
+	tableInfo, ok := s.structure[table]
+	if !ok {
+		tableInfo, err = s.LoadProductTableStructure(table)
+		if err != nil {
+			return nil, fmt.Errorf("load table structure: %w", err)
+		}
+		s.structure[table] = tableInfo
+	}
+	return tableInfo, nil
+}
+
+func (s *MySql) insert(table string, userData map[string]interface{}) (int64, error) {
+
+	// Получаем структуру таблицы
+	tableInfo, err := s.readStructure(table)
+	if err != nil {
+		return 0, fmt.Errorf("read table structure: %w", err)
+	}
+
+	var colNames []string
+	var placeholders []string
+	var values []interface{}
+
+	// Проходим по всем колонкам таблицы, которые были закешированы
+	for colName, colInfo := range tableInfo {
+		// Пропускаем колонки с AUTO_INCREMENT
+		if colInfo.AutoIncrement {
+			continue
+		}
+		// Смотрим, есть ли значение для этой колонки в userData
+		if userVal, ok := userData[colName]; ok {
+			// Пользовательская структура содержит данные — вставляем
+			colNames = append(colNames, colName)
+			placeholders = append(placeholders, "?")
+			values = append(values, userVal)
+		} else {
+			// Данных от пользователя нет
+			// Если у поля есть DEFAULT в БД — лучше пропустить, чтобы СУБД подставила дефолт
+			if colInfo.DefaultValue != nil {
+				continue
+			}
+			// Если поле допускает NULL, то тоже пропустим — тогда в БД попадёт NULL
+			// (или будет использован DEFAULT NULL).
+			if colInfo.IsNullable {
+				continue
+			}
+			// Если мы здесь — поле NOT NULL, без DEFAULT => нужно что-то явно вставить
+			colNames = append(colNames, colName)
+			placeholders = append(placeholders, "?")
+
+			switch colInfo.DataType {
+			case "int", "bigint", "smallint", "tinyint", "decimal", "float", "double":
+				values = append(values, 0)
+			case "varchar", "text", "char", "blob":
+				values = append(values, "")
+			default:
+				values = append(values, nil)
+			}
+		}
+	}
+	if len(colNames) == 0 {
+		return 0, errors.New("no columns to insert")
+	}
+	// Формируем сам запрос INSERT
+	insertSQL := fmt.Sprintf(
+		"INSERT INTO %sproduct (%s) VALUES (%s)",
+		s.prefix,
+		strings.Join(colNames, ", "),
+		strings.Join(placeholders, ", "),
+	)
+	res, err := s.db.Exec(insertSQL, values...)
+	if err != nil {
+		return 0, fmt.Errorf("insert: %w", err)
+	}
+
+	// Get the last inserted product_id
+	rowId, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("get last insert id: %v", err)
+	}
+
+	return rowId, nil
 }

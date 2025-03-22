@@ -3,19 +3,18 @@ package database
 import (
 	"database/sql"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"ocapi/entity"
 	"ocapi/internal/config"
-	"strings"
 	"time"
 )
 
 type MySql struct {
-	db     *sql.DB
-	prefix string
-	tables Tables
+	db        *sql.DB
+	prefix    string
+	tables    Tables
+	structure map[string]map[string]Column
 }
 
 func NewSQLClient(conf *config.Config) (*MySql, error) {
@@ -34,8 +33,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	}
 
 	sdb := &MySql{
-		db:     db,
-		prefix: conf.SQL.Prefix,
+		db:        db,
+		prefix:    conf.SQL.Prefix,
+		structure: make(map[string]map[string]Column),
 	}
 
 	sdb.tables, err = sdb.LoadTablesStructure()
@@ -50,9 +50,6 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, err
 	}
 	if err = sdb.addColumnIfNotExists("category_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
-		return nil, err
-	}
-	if err = sdb.addColumnIfNotExists("product_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
 
@@ -286,66 +283,9 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		"date_modified":   product.DateModified,
 	}
 
-	var colNames []string
-	var placeholders []string
-	var values []interface{}
-
-	// Проходим по всем колонкам таблицы, которые были закешированы
-	for colName, colInfo := range s.tables.Product {
-		// Пропускаем колонки с AUTO_INCREMENT
-		if colInfo.AutoIncrement {
-			continue
-		}
-		// Смотрим, есть ли значение для этой колонки в userData
-		if userVal, ok := userData[colName]; ok {
-			// Пользовательская структура содержит данные — вставляем
-			colNames = append(colNames, colName)
-			placeholders = append(placeholders, "?")
-			values = append(values, userVal)
-		} else {
-			// Данных от пользователя нет
-			// Если у поля есть DEFAULT в БД — лучше пропустить, чтобы СУБД подставила дефолт
-			if colInfo.DefaultValue != nil {
-				continue
-			}
-			// Если поле допускает NULL, то тоже пропустим — тогда в БД попадёт NULL
-			// (или будет использован DEFAULT NULL).
-			if colInfo.IsNullable {
-				continue
-			}
-			// Если мы здесь — поле NOT NULL, без DEFAULT => нужно что-то явно вставить
-			colNames = append(colNames, colName)
-			placeholders = append(placeholders, "?")
-
-			switch colInfo.DataType {
-			case "int", "bigint", "smallint", "tinyint", "decimal", "float", "double":
-				values = append(values, 0)
-			case "varchar", "text", "char", "blob":
-				values = append(values, "")
-			default:
-				values = append(values, nil)
-			}
-		}
-	}
-	if len(colNames) == 0 {
-		return errors.New("no columns to insert")
-	}
-	// Формируем сам запрос INSERT
-	insertSQL := fmt.Sprintf(
-		"INSERT INTO %sproduct (%s) VALUES (%s)",
-		s.prefix,
-		strings.Join(colNames, ", "),
-		strings.Join(placeholders, ", "),
-	)
-	res, err := s.db.Exec(insertSQL, values...)
+	productId, err := s.insert("product", userData)
 	if err != nil {
-		return fmt.Errorf("insert: %w", err)
-	}
-
-	// Get the last inserted product_id
-	productId, err := res.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("get last insert id: %v", err)
+		return err
 	}
 
 	if err = s.addProductToStore(productId); err != nil {
@@ -535,32 +475,18 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 			return fmt.Errorf("update: %v", err)
 		}
 	} else {
-		query = fmt.Sprintf(
-			`INSERT INTO %sproduct_description (
-				product_id,
-				language_id,
-				name,
-				description,
-				meta_title,
-				meta_description,
-				meta_keyword,
-                seo_keyword,
-				tag)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			s.prefix)
 
-		_, err = s.db.Exec(query,
-			productId,
-			productDescription.LanguageId,
-			productDescription.Name,
-			productDescription.Description,
-			productDescription.Name,
-			"",
-			"",
-			"",
-			"")
+		userData := map[string]interface{}{
+			"product_id":  productId,
+			"language_id": productDescription.LanguageId,
+			"name":        productDescription.Name,
+			"description": productDescription.Description,
+			"meta_title":  productDescription.Name,
+		}
+
+		_, err = s.insert("product_description", userData)
 		if err != nil {
-			return fmt.Errorf("insert: %v", err)
+			return err
 		}
 	}
 
