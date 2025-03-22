@@ -291,6 +291,10 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 
 	// Проходим по всем колонкам таблицы, которые были закешированы
 	for colName, colInfo := range s.tables.Product {
+		// Пропускаем колонки с AUTO_INCREMENT
+		if colInfo.AutoIncrement {
+			continue
+		}
 		// Смотрим, есть ли значение для этой колонки в userData
 		if userVal, ok := userData[colName]; ok {
 			// Пользовательская структура содержит данные — вставляем

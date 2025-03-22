@@ -11,10 +11,11 @@ type Tables struct {
 }
 
 type Column struct {
-	Name         string  // Имя столбца
-	DefaultValue *string // Значение по умолчанию (nil, если в БД оно NULL)
-	IsNullable   bool    // Разрешает ли столбец NULL
-	DataType     string  // Тип данных (например, 'int', 'varchar' и т.д.)
+	Name          string  // Имя столбца
+	DefaultValue  *string // Значение по умолчанию (nil, если в БД оно NULL)
+	IsNullable    bool    // Разрешает ли столбец NULL
+	DataType      string  // Тип данных (например, 'int', 'varchar' и т.д.)
+	AutoIncrement bool    // Является ли столбец автоинкрементным
 }
 
 func (s *MySql) LoadTablesStructure() (Tables, error) {
@@ -36,7 +37,7 @@ func (s *MySql) LoadTablesStructure() (Tables, error) {
 // и возвращает её в виде map[имя_колонки]ColumnInfo.
 func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, error) {
 	query := fmt.Sprintf(`
-        SELECT COLUMN_NAME, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE
+        SELECT COLUMN_NAME, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, EXTRA
           FROM information_schema.columns
          WHERE table_name = '%s%s'
          ORDER BY ORDINAL_POSITION`, s.prefix, tableName)
@@ -52,11 +53,11 @@ func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, 
 	columns := make(map[string]Column)
 
 	for rows.Next() {
-		var colName, isNullable, dataType string
+		var colName, isNullable, dataType, extra string
 		var colDefault sql.NullString
 
 		// Считываем строку
-		if err = rows.Scan(&colName, &colDefault, &isNullable, &dataType); err != nil {
+		if err = rows.Scan(&colName, &colDefault, &isNullable, &dataType, &extra); err != nil {
 			return nil, fmt.Errorf("failed to scan column info: %w", err)
 		}
 
@@ -73,10 +74,11 @@ func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, 
 		}
 
 		columns[colName] = Column{
-			Name:         colName,
-			DefaultValue: defValPtr,
-			IsNullable:   nullable,
-			DataType:     dataType,
+			Name:          colName,
+			DefaultValue:  defValPtr,
+			IsNullable:    nullable,
+			DataType:      dataType,
+			AutoIncrement: extra == "auto_increment",
 		}
 	}
 
