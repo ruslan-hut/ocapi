@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-type Tables struct {
-	Product map[string]Column
-}
-
 type Column struct {
 	Name          string  // Имя столбца
 	DefaultValue  *string // Значение по умолчанию (nil, если в БД оно NULL)
@@ -19,24 +15,9 @@ type Column struct {
 	AutoIncrement bool    // Является ли столбец автоинкрементным
 }
 
-func (s *MySql) LoadTablesStructure() (Tables, error) {
-	tables := Tables{
-		Product: make(map[string]Column),
-	}
-
-	// Load product table structure
-	productColumns, err := s.LoadProductTableStructure("product")
-	if err != nil {
-		return tables, fmt.Errorf("product table: %w", err)
-	}
-	tables.Product = productColumns
-
-	return tables, nil
-}
-
-// LoadProductTableStructure считывает структуру столбцов из information_schema
+// loadTableStructure считывает структуру столбцов из information_schema
 // и возвращает её в виде map[имя_колонки]ColumnInfo.
-func (s *MySql) LoadProductTableStructure(tableName string) (map[string]Column, error) {
+func (s *MySql) loadTableStructure(tableName string) (map[string]Column, error) {
 	query := fmt.Sprintf(`
         SELECT COLUMN_NAME, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, EXTRA
           FROM information_schema.columns
@@ -115,7 +96,7 @@ func (s *MySql) readStructure(table string) (map[string]Column, error) {
 	}
 	tableInfo, ok := s.structure[table]
 	if !ok {
-		tableInfo, err = s.LoadProductTableStructure(table)
+		tableInfo, err = s.loadTableStructure(table)
 		if err != nil {
 			return nil, fmt.Errorf("load table structure: %w", err)
 		}
@@ -129,7 +110,7 @@ func (s *MySql) insert(table string, userData map[string]interface{}) (int64, er
 	// Получаем структуру таблицы
 	tableInfo, err := s.readStructure(table)
 	if err != nil {
-		return 0, fmt.Errorf("read table structure: %w", err)
+		return 0, err
 	}
 
 	var colNames []string

@@ -13,7 +13,6 @@ import (
 type MySql struct {
 	db        *sql.DB
 	prefix    string
-	tables    Tables
 	structure map[string]map[string]Column
 }
 
@@ -38,18 +37,10 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		structure: make(map[string]map[string]Column),
 	}
 
-	sdb.tables, err = sdb.LoadTablesStructure()
-	if err != nil {
-		return nil, fmt.Errorf("load tables structure: %w", err)
-	}
-
 	if err = sdb.addColumnIfNotExists("category", "parent_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
 	if err = sdb.addColumnIfNotExists("category", "category_uid", "VARCHAR(64) NOT NULL"); err != nil {
-		return nil, err
-	}
-	if err = sdb.addColumnIfNotExists("category_description", "seo_keyword", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
 
@@ -361,53 +352,13 @@ func (s *MySql) addProductToLayout(productID int64) error {
 	return nil
 }
 
-func (s *MySql) getProductDescription(productDesc *entity.ProductDescription) ([]*entity.ProductDescription, error) {
+func (s *MySql) findProductDescription(productId, languageId int64) (*entity.ProductDescription, error) {
 	query := fmt.Sprintf(
 		`SELECT
 					name,
 					description
 				FROM %sproduct_description 
-				WHERE product_id=? AND language_id=?`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query,
-		productDesc.Name,
-		productDesc.Description,
-		productDesc.ProductUid,
-		productDesc.LanguageId)
-	if err != nil {
-		return nil, err
-	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
-
-	var productsDesc []*entity.ProductDescription
-	for rows.Next() {
-		var prodDesc entity.ProductDescription
-		if err = rows.Scan(
-			&prodDesc.Name,
-			&prodDesc.Description,
-		); err != nil {
-			return nil, fmt.Errorf("scan: %w", err)
-		}
-		productsDesc = append(productsDesc, &prodDesc)
-	}
-
-	return productsDesc, nil
-}
-
-func (s *MySql) findProductDescription(productId, languageId int64) (*entity.ProductDescription, error) {
-	query := fmt.Sprintf(
-		`SELECT
-					name,
-					description,
-					meta_title,
-					meta_description,
-					meta_keyword,
-					seo_keyword
-				FROM %sproduct_description 
-				WHERE product_id=? AND language_id=?`,
+				WHERE product_id=? AND language_id=? LIMIT 1`,
 		s.prefix,
 	)
 	rows, err := s.db.Query(query, productId, languageId)
@@ -423,10 +374,6 @@ func (s *MySql) findProductDescription(productId, languageId int64) (*entity.Pro
 		if err = rows.Scan(
 			&productDesc.Name,
 			&productDesc.Description,
-			&productDesc.MetaTitle,
-			&productDesc.MetaDescription,
-			&productDesc.MetaKeyword,
-			&productDesc.SeoKeyword,
 		); err != nil {
 			return nil, fmt.Errorf("scan: %w", err)
 		}
@@ -550,13 +497,14 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 		return categoryId, nil
 	}
 
-	query = fmt.Sprintf(`INSERT INTO %scategory (category_uid, date_added) VALUES (?,?)`, s.prefix)
-	res, err := s.db.Exec(query, uid, time.Now())
-	if err != nil {
-		return 0, fmt.Errorf("insert: %w", err)
+	userData := map[string]interface{}{
+		"category_uid": uid,
+		"date_added":   time.Now(),
 	}
-
-	categoryId, _ := res.LastInsertId()
+	categoryId, err := s.insert("category", userData)
+	if err != nil {
+		return 0, err
+	}
 
 	return categoryId, nil
 }
@@ -595,8 +543,7 @@ func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.C
 					description,
 					meta_title,
 					meta_description,
-					meta_keyword,
-					seo_keyword
+					meta_keyword
 				FROM %scategory_description 
 				WHERE category_id=? AND language_id=?`,
 		s.prefix,
@@ -617,7 +564,6 @@ func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.C
 			&categoryDesc.MetaTitle,
 			&categoryDesc.MetaDescription,
 			&categoryDesc.MetaKeyword,
-			&categoryDesc.SeoKeyword,
 		); err != nil {
 			return nil, fmt.Errorf("scan: %w", err)
 		}
@@ -653,31 +599,17 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 			return fmt.Errorf("update: %v", err)
 		}
 	} else {
-		query := fmt.Sprintf(
-			`INSERT INTO %scategory_description (
-			   category_id,
-			   language_id,
-			   name,
-			   description,
-				meta_title,
-				meta_description,
-				meta_keyword,
-				seo_keyword)
-			VALUES (?,?,?,?,?,?,?)`,
-			s.prefix)
-
-		_, err = s.db.Exec(query,
-			categoryDesc.CategoryId,
-			categoryDesc.LanguageId,
-			categoryDesc.Name,
-			categoryDesc.Description,
-			categoryDesc.MetaTitle,
-			categoryDesc.MetaDescription,
-			categoryDesc.MetaKeyword,
-			categoryDesc.SeoKeyword,
-		)
+		userData := map[string]interface{}{
+			"category_id":      categoryDesc.CategoryId,
+			"language_id":      categoryDesc.LanguageId,
+			"name":             categoryDesc.Name,
+			"description":      categoryDesc.Description,
+			"meta_title":       categoryDesc.Name,
+			"meta_description": categoryDesc.Name,
+		}
+		_, err = s.insert("category_description", userData)
 		if err != nil {
-			return fmt.Errorf("insert: %v", err)
+			return err
 		}
 	}
 	return nil

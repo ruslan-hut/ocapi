@@ -8,7 +8,6 @@ type CategoryDescription struct {
 	MetaTitle       string `json:"meta_title,omitempty"`
 	MetaDescription string `json:"meta_description,omitempty"`
 	MetaKeyword     string `json:"meta_keyword,omitempty"`
-	SeoKeyword      string `json:"seo_keyword,omitempty"`
 }
 
 func CategoryDescriptionFromCategoryDescriptionData(category *CategoryDescriptionData) *CategoryDescription {
@@ -19,6 +18,5 @@ func CategoryDescriptionFromCategoryDescriptionData(category *CategoryDescriptio
 		MetaTitle:       category.Name,
 		MetaDescription: category.Name,
 		MetaKeyword:     "",
-		SeoKeyword:      "",
 	}
 }
