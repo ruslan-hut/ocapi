@@ -20,6 +20,20 @@ func (p *ProductData) Bind(_ *http.Request) error {
 	return validate.Struct(p)
 }
 
+func (p *ProductData) Status() int {
+	if p.Active {
+		return 1
+	}
+	return 0
+}
+
+func (p *ProductData) StockStatusID() int {
+	if p.Quantity > 0 {
+		return 7
+	}
+	return 5
+}
+
 type ProductDataRequest struct {
 	Full  bool           `json:"full_update"`
 	Page  int            `json:"page"`

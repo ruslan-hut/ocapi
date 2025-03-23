@@ -8,7 +8,7 @@ import (
 )
 
 type Repository interface {
-	ProductSearch(model string) ([]*entity.Product, error)
+	ProductSearch(model string) (interface{}, error)
 	SaveProducts(products []*entity.ProductData) error
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
 	SaveCategories(categoriesData []*entity.CategoryData) error

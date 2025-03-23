@@ -34,7 +34,7 @@ func ModelSearch(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Search failed: %v", err)))
 			return
 		}
-		logger.With(slog.Int("size", len(product))).Debug("product search")
+		logger.Debug("product search")
 
 		render.JSON(w, r, response.Ok(product))
 	}

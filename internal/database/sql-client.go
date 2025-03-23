@@ -13,12 +13,11 @@ import (
 )
 
 type MySql struct {
-	db                    *sql.DB
-	prefix                string
-	structure             map[string]map[string]Column
-	stmtGetProductByUID   *sql.Stmt
-	stmtGetManufacturerId *sql.Stmt
-	onceUIDStmt           sync.Once
+	db         *sql.DB
+	prefix     string
+	structure  map[string]map[string]Column
+	statements map[string]*sql.Stmt
+	mu         sync.Mutex
 }
 
 func NewSQLClient(conf *config.Config) (*MySql, error) {
@@ -67,12 +66,7 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 }
 
 func (s *MySql) Close() {
-	if s.stmtGetProductByUID != nil {
-		_ = s.stmtGetProductByUID.Close()
-	}
-	if s.stmtGetManufacturerId != nil {
-		_ = s.stmtGetManufacturerId.Close()
-	}
+	s.closeStmt()
 	_ = s.db.Close()
 }
 
@@ -84,47 +78,8 @@ func (s *MySql) Stats() string {
 		stats.Idle)
 }
 
-func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
-	query := fmt.Sprintf(
-		`SELECT 
-					product_id,
-					model,
-					sku,
-					status,
-					stock_status_id,
-					quantity,
-					price,
-					manufacturer_id,
-					date_modified 
-				FROM %sproduct 
-				WHERE model=?`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query, model)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var products []*entity.Product
-	for rows.Next() {
-		var product entity.Product
-		if err = rows.Scan(
-			&product.Id,
-			&product.Model,
-			&product.Sku,
-			&product.Status,
-			&product.StockStatusId,
-			&product.Quantity,
-			&product.Price,
-			&product.ManufacturerId,
-			&product.DateModified,
-		); err != nil {
-			return nil, fmt.Errorf("scan: %w", err)
-		}
-		products = append(products, &product)
-	}
-	return products, nil
+func (s *MySql) ProductSearch(model string) (interface{}, error) {
+	return s.ReadTable("product", fmt.Sprintf("model='%s'", model), 0)
 }
 
 func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
@@ -230,37 +185,24 @@ func (s *MySql) UpdateProductImage(productUid string, image string) error {
 }
 
 func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) error {
-
-	product := entity.ProductFromProductData(productData)
-
 	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
 	if err != nil {
 		return fmt.Errorf("manufacturer search: %v", err)
 	}
 
-	query := fmt.Sprintf(
-		`UPDATE %sproduct SET
-				sku = ?, 
-				quantity = ?, 
-                stock_status_id = ?,
-				price = ?, 
-				manufacturer_id = ?, 
-				status = ?, 
-				date_modified = ?,
-                batch_uid = ?
-			    WHERE product_id = ?`,
-		s.prefix,
-	)
-
-	_, err = s.db.Exec(query,
-		product.Sku,
-		product.Quantity,
-		product.StockStatusId,
-		product.Price,
+	stmt, err := s.stmtUpdateProduct()
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(
+		productData.Article,
+		productData.Quantity,
+		productData.StockStatusID(),
+		productData.Price,
 		manufacturerId,
-		product.Status,
+		productData.Status(),
 		time.Now(),
-		product.BatchUID,
+		productData.BatchUID,
 		productId)
 	if err != nil {
 		return fmt.Errorf("update: %v", err)
@@ -276,35 +218,30 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 	return nil
 }
 
-func (s *MySql) addProduct(productData *entity.ProductData) error {
-
-	product := entity.ProductFromProductData(productData)
-	product.DateAdded = time.Now()
-
-	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
+func (s *MySql) addProduct(product *entity.ProductData) error {
+	manufacturerId, err := s.getManufacturerId(product.Manufacturer)
 	if err != nil {
 		return fmt.Errorf("manufacturer search: %v", err)
 	}
-	product.ManufacturerId = manufacturerId
 
 	// known columns
 	userData := map[string]interface{}{
-		"model":           product.Model,
-		"sku":             product.Sku,
+		"model":           product.Uid,
+		"sku":             product.Article,
 		"price":           product.Price,
-		"manufacturer_id": product.ManufacturerId,
+		"manufacturer_id": manufacturerId,
 		"quantity":        product.Quantity,
-		"status":          product.Status,
-		"stock_status_id": product.StockStatusId,
-		"minimum":         product.Minimum,
-		"subtract":        product.Subtract,
-		"date_available":  product.DateAvailable,
-		"shipping":        product.Shipping,
-		"tax_class_id":    product.TaxClassId,
-		"weight_class_id": product.WeightClassId,
-		"length_class_id": product.LengthClassId,
-		"date_added":      product.DateAdded,
-		"date_modified":   product.DateModified,
+		"status":          product.Status(),
+		"stock_status_id": product.StockStatusID(),
+		"minimum":         1,
+		"subtract":        1,
+		"date_available":  time.Now().AddDate(0, 0, -3),
+		"shipping":        1,
+		"tax_class_id":    9,
+		"weight_class_id": 0,
+		"length_class_id": 0,
+		"date_added":      time.Now(),
+		"date_modified":   time.Now(),
 		"batch_uid":       product.BatchUID,
 	}
 
@@ -317,7 +254,7 @@ func (s *MySql) addProduct(productData *entity.ProductData) error {
 		return err
 	}
 
-	categoryId, err := s.getCategoryByUID(productData.CategoryUid)
+	categoryId, err := s.getCategoryByUID(product.CategoryUid)
 	if err == nil {
 		if err = s.addProductToCategory(productId, categoryId); err != nil {
 			return err
@@ -473,16 +410,13 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 }
 
 func (s *MySql) getProductByUID(uid string) (int64, error) {
-	var initErr error
-	s.onceUIDStmt.Do(func() {
-		query := fmt.Sprintf(`SELECT product_id FROM %sproduct WHERE model=? LIMIT 1`, s.prefix)
-		s.stmtGetProductByUID, initErr = s.db.Prepare(query)
-	})
-	if initErr != nil {
-		return 0, initErr
+	stmt, err := s.stmtSelectProductId()
+	if err != nil {
+		return 0, err
 	}
+
 	var productId int64
-	err := s.stmtGetProductByUID.QueryRow(uid).Scan(&productId)
+	err = stmt.QueryRow(uid).Scan(&productId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, nil
@@ -493,27 +427,19 @@ func (s *MySql) getProductByUID(uid string) (int64, error) {
 }
 
 func (s *MySql) getCategoryByUID(uid string) (int64, error) {
-	query := fmt.Sprintf(
-		`SELECT
-					category_id
-				FROM %scategory 
-				WHERE category_uid=?
-				LIMIT 1`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query, uid)
+	stmt, err := s.stmtCategoryId()
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var categoryId int64
-		if err = rows.Scan(
-			&categoryId,
-		); err != nil {
-			return 0, err
+	var categoryId int64
+	err = stmt.QueryRow(uid).Scan(&categoryId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			categoryId = 0
 		}
+		return 0, err
+	}
+	if categoryId != 0 {
 		return categoryId, nil
 	}
 
@@ -521,7 +447,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 		"category_uid": uid,
 		"date_added":   time.Now(),
 	}
-	categoryId, err := s.insert("category", userData)
+	categoryId, err = s.insert("category", userData)
 	if err != nil {
 		return 0, err
 	}
@@ -530,18 +456,11 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 }
 
 func (s *MySql) updateCategory(category *entity.Category) error {
-	query := fmt.Sprintf(
-		`UPDATE %scategory SET
-                        parent_id=?,
-                        parent_uid=?,
-                        top=?,
-                        sort_order=?,
-                        status=?,
-                        date_modified=?
-			    WHERE category_id = ?`,
-		s.prefix,
-	)
-	_, err := s.db.Exec(query,
+	stmt, err := s.stmtUpdateCategory()
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(
 		category.ParentId,
 		category.ParentUID,
 		category.Top,
@@ -557,38 +476,25 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 }
 
 func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.CategoryDescription, error) {
-	query := fmt.Sprintf(
-		`SELECT
-					name,
-					description,
-					meta_title,
-					meta_description,
-					meta_keyword
-				FROM %scategory_description 
-				WHERE category_id=? AND language_id=?`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query, categoryId, languageId)
+	stmt, err := s.stmtCategoryDescription()
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var categoryDesc entity.CategoryDescription
-		if err = rows.Scan(
-			&categoryDesc.Name,
-			&categoryDesc.Description,
-			&categoryDesc.MetaTitle,
-			&categoryDesc.MetaDescription,
-			&categoryDesc.MetaKeyword,
-		); err != nil {
-			return nil, fmt.Errorf("scan: %w", err)
+	var categoryDescription entity.CategoryDescription
+	err = stmt.QueryRow(categoryId, languageId).Scan(
+		&categoryDescription.Name,
+		&categoryDescription.Description,
+		&categoryDescription.MetaTitle,
+		&categoryDescription.MetaDescription,
+		&categoryDescription.MetaKeyword,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
 		}
-		return &categoryDesc, nil
+		return nil, err
 	}
-
-	return nil, nil
+	return &categoryDescription, nil
 }
 
 func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescription) error {
@@ -605,10 +511,11 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 	}
 
 	if description != nil {
-		query := fmt.Sprintf(`UPDATE %scategory_description SET name=?, description=?
-			    WHERE category_id=? AND language_id=?`, s.prefix,
-		)
-		_, err = s.db.Exec(query,
+		stmt, err := s.stmtUpdateCategoryDescription()
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(
 			categoryDesc.Name,
 			categoryDesc.Description,
 			categoryDesc.CategoryId,
@@ -657,16 +564,12 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	if name == "" {
 		return 0, nil
 	}
-	var initErr error
-	s.onceUIDStmt.Do(func() {
-		query := fmt.Sprintf(`SELECT manufacturer_id FROM %smanufacturer WHERE name=? LIMIT 1`, s.prefix)
-		s.stmtGetManufacturerId, initErr = s.db.Prepare(query)
-	})
-	if initErr != nil {
-		return 0, initErr
+	stmt, err := s.stmtManufacturerId()
+	if err != nil {
+		return 0, err
 	}
 	var manufacturerId int64
-	err := s.stmtGetManufacturerId.QueryRow(name).Scan(&manufacturerId)
+	err = stmt.QueryRow(name).Scan(&manufacturerId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			manufacturerId = 0
