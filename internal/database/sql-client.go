@@ -104,9 +104,7 @@ func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	var products []*entity.Product
 	for rows.Next() {
@@ -401,9 +399,7 @@ func (s *MySql) findProductDescription(productId, languageId int64) (*entity.Pro
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var productDesc entity.ProductDescription
@@ -509,9 +505,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var categoryId int64
@@ -578,9 +572,7 @@ func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.C
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	for rows.Next() {
 		var categoryDesc entity.CategoryDescription
@@ -718,13 +710,11 @@ func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+	defer rows.Close()
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get columns: %w", err)
+		return nil, fmt.Errorf("to get columns: %w", err)
 	}
 
 	results := make([]map[string]interface{}, 0)
@@ -742,8 +732,8 @@ func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) 
 		rowMap := make(map[string]interface{})
 		for i, colName := range columns {
 			if str, ok := columnValues[i].([]byte); ok {
-				decodedValue, err := base64.StdEncoding.DecodeString(string(str))
-				if err != nil {
+				decodedValue, e := base64.StdEncoding.DecodeString(string(str))
+				if e != nil {
 					rowMap[colName] = string(str)
 				} else {
 					rowMap[colName] = string(decodedValue)
