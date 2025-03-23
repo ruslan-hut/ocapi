@@ -70,7 +70,7 @@ func (s *MySql) stmtUpdateCategoryDescription() (*sql.Stmt, error) {
 		`UPDATE %scategory_description
 				SET
 					name=?,
-					description=?,
+					description=?
 				WHERE category_id=? AND language_id=?`,
 		s.prefix,
 	)
