@@ -65,6 +65,14 @@ func (s *MySql) Close() {
 	_ = s.db.Close()
 }
 
+func (s *MySql) Stats() string {
+	stats := s.db.Stats()
+	return fmt.Sprintf("OpenConns: %d, InUse: %d, Idle: %d",
+		stats.OpenConnections,
+		stats.InUse,
+		stats.Idle)
+}
+
 func (s *MySql) ProductSearch(model string) ([]*entity.Product, error) {
 	query := fmt.Sprintf(
 		`SELECT 

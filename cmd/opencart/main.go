@@ -9,6 +9,7 @@ import (
 	"ocapi/internal/http-server/api"
 	"ocapi/internal/lib/logger"
 	"ocapi/internal/lib/sl"
+	"time"
 )
 
 func main() {
@@ -40,6 +41,19 @@ func main() {
 			slog.String("database", conf.SQL.Database),
 		)
 		defer db.Close()
+
+		go func() {
+			ticker := time.NewTicker(30 * time.Minute)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ticker.C:
+					stats := db.Stats()
+					lg.Info("mysql stats", slog.String("stats", stats))
+				}
+			}
+		}()
 	}
 
 	//if conf.Telegram.Enabled {
