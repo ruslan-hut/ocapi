@@ -33,6 +33,7 @@ func SaveDescription(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Failed to decode: %v", err)))
 			return
 		}
+		logger = logger.With(slog.Int("size", len(body.Data)))
 
 		err := handler.LoadProductDescriptions(body.Data)
 		if err != nil {
@@ -40,7 +41,7 @@ func SaveDescription(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Save data failed: %v", err)))
 			return
 		}
-		logger.With(slog.Int("size", len(body.Data))).Debug("product descriptions saved")
+		logger.Debug("product descriptions saved")
 
 		render.JSON(w, r, response.Ok(nil))
 	}

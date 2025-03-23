@@ -33,6 +33,7 @@ func SaveImage(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Failed to decode: %v", err)))
 			return
 		}
+		logger = logger.With(slog.Int("size", len(body.Data)))
 
 		err := handler.LoadProductImages(body.Data)
 		if err != nil {
@@ -40,7 +41,7 @@ func SaveImage(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Save image: %v", err)))
 			return
 		}
-		logger.With(slog.Int("size", len(body.Data))).Debug("product images saved")
+		logger.Debug("product images saved")
 
 		render.JSON(w, r, response.Ok(nil))
 	}

@@ -37,6 +37,7 @@ func SaveProduct(log *slog.Logger, handler Core) http.HandlerFunc {
 			slog.Bool("full", body.Full),
 			slog.Int("page", body.Page),
 			slog.Int("total", body.Total),
+			slog.Int("size", len(body.Data)),
 		)
 
 		err := handler.LoadProducts(body.Data)
@@ -45,7 +46,7 @@ func SaveProduct(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Save data failed: %v", err)))
 			return
 		}
-		logger.With(slog.Int("size", len(body.Data))).Debug("product data saved")
+		logger.Debug("product data saved")
 
 		render.JSON(w, r, response.Ok(nil))
 	}
