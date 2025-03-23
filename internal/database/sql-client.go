@@ -13,11 +13,12 @@ import (
 )
 
 type MySql struct {
-	db                  *sql.DB
-	prefix              string
-	structure           map[string]map[string]Column
-	stmtGetProductByUID *sql.Stmt
-	onceUIDStmt         sync.Once
+	db                    *sql.DB
+	prefix                string
+	structure             map[string]map[string]Column
+	stmtGetProductByUID   *sql.Stmt
+	stmtGetManufacturerId *sql.Stmt
+	onceUIDStmt           sync.Once
 }
 
 func NewSQLClient(conf *config.Config) (*MySql, error) {
@@ -68,6 +69,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 func (s *MySql) Close() {
 	if s.stmtGetProductByUID != nil {
 		_ = s.stmtGetProductByUID.Close()
+	}
+	if s.stmtGetManufacturerId != nil {
+		_ = s.stmtGetManufacturerId.Close()
 	}
 	_ = s.db.Close()
 }
@@ -543,7 +547,7 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 			    WHERE category_id = ?`,
 		s.prefix,
 	)
-	_, err := s.db.Query(query,
+	_, err := s.db.Exec(query,
 		category.ParentId,
 		category.ParentUID,
 		category.Top,
@@ -661,40 +665,40 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	if name == "" {
 		return 0, nil
 	}
-	query := fmt.Sprintf(
-		`SELECT
-					manufacturer_id
-				FROM %smanufacturer 
-				WHERE name=?
-				LIMIT 1`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query, name)
-	if err != nil {
-		return 0, err
+	var initErr error
+	s.onceUIDStmt.Do(func() {
+		query := fmt.Sprintf(`SELECT manufacturer_id FROM %smanufacturer WHERE name=? LIMIT 1`, s.prefix)
+		s.stmtGetManufacturerId, initErr = s.db.Prepare(query)
+	})
+	if initErr != nil {
+		return 0, initErr
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
-
-	for rows.Next() {
-		var manufacturerId int64
-		if err = rows.Scan(manufacturerId); err != nil {
+	var manufacturerId int64
+	err := s.stmtGetManufacturerId.QueryRow(name).Scan(&manufacturerId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			manufacturerId = 0
+		} else {
 			return 0, err
 		}
+	}
+	if manufacturerId != 0 {
 		return manufacturerId, nil
 	}
 
-	query = fmt.Sprintf(`INSERT INTO %smanufacturer (name) VALUES (?)`, s.prefix)
+	query := fmt.Sprintf(`INSERT INTO %smanufacturer (name) VALUES (?)`, s.prefix)
 	res, err := s.db.Exec(query, name)
 	if err != nil {
 		return 0, fmt.Errorf("insert: %w", err)
 	}
 
-	manufacturerId, _ := res.LastInsertId()
+	manufacturerId, err = res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("last insert id: %w", err)
+	}
 
-	query = fmt.Sprintf(`INSERT INTO %smanufacturer_to_store (manufacturer_id,Store_id) VALUES (?,0)`, s.prefix)
-	res, err = s.db.Exec(query, name)
+	query = fmt.Sprintf(`INSERT INTO %smanufacturer_to_store (manufacturer_id, store_id) VALUES (?, 0)`, s.prefix)
+	_, err = s.db.Exec(query, manufacturerId)
 	if err != nil {
 		return 0, fmt.Errorf("insert: %w", err)
 	}
