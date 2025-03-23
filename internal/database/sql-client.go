@@ -47,9 +47,10 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	db.SetConnMaxLifetime(time.Hour) // время жизни соединения
 
 	sdb := &MySql{
-		db:        db,
-		prefix:    conf.SQL.Prefix,
-		structure: make(map[string]map[string]Column),
+		db:         db,
+		prefix:     conf.SQL.Prefix,
+		structure:  make(map[string]map[string]Column),
+		statements: make(map[string]*sql.Stmt),
 	}
 
 	if err = sdb.addColumnIfNotExists("product", "batch_uid", "VARCHAR(64) NOT NULL"); err != nil {
