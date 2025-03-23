@@ -42,6 +42,7 @@ func main() {
 		)
 		defer db.Close()
 
+		lg.Info("mysql stats", slog.String("stats", db.Stats()))
 		go func() {
 			ticker := time.NewTicker(30 * time.Minute)
 			defer ticker.Stop()
@@ -49,8 +50,7 @@ func main() {
 			for {
 				select {
 				case <-ticker.C:
-					stats := db.Stats()
-					lg.Info("mysql stats", slog.String("stats", stats))
+					lg.Info("mysql stats", slog.String("stats", db.Stats()))
 				}
 			}
 		}()

@@ -3,17 +3,21 @@ package database
 import (
 	"database/sql"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"ocapi/entity"
 	"ocapi/internal/config"
+	"sync"
 	"time"
 )
 
 type MySql struct {
-	db        *sql.DB
-	prefix    string
-	structure map[string]map[string]Column
+	db                  *sql.DB
+	prefix              string
+	structure           map[string]map[string]Column
+	stmtGetProductByUID *sql.Stmt
+	onceUIDStmt         sync.Once
 }
 
 func NewSQLClient(conf *config.Config) (*MySql, error) {
@@ -62,6 +66,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 }
 
 func (s *MySql) Close() {
+	if s.stmtGetProductByUID != nil {
+		_ = s.stmtGetProductByUID.Close()
+	}
 	_ = s.db.Close()
 }
 
@@ -466,33 +473,23 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 }
 
 func (s *MySql) getProductByUID(uid string) (int64, error) {
-	query := fmt.Sprintf(
-		`SELECT
-					product_id
-				FROM %sproduct 
-				WHERE model=?
-				LIMIT 1`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query, uid)
+	var initErr error
+	s.onceUIDStmt.Do(func() {
+		query := fmt.Sprintf(`SELECT product_id FROM %sproduct WHERE model=? LIMIT 1`, s.prefix)
+		s.stmtGetProductByUID, initErr = s.db.Prepare(query)
+	})
+	if initErr != nil {
+		return 0, initErr
+	}
+	var productId int64
+	err := s.stmtGetProductByUID.QueryRow(uid).Scan(&productId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
 		return 0, err
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
-
-	for rows.Next() {
-		var productId int64
-		if err = rows.Scan(
-			&productId,
-		); err != nil {
-			return 0, err
-		}
-		return productId, nil
-	}
-
-	return 0, nil
+	return productId, nil
 }
 
 func (s *MySql) getCategoryByUID(uid string) (int64, error) {
