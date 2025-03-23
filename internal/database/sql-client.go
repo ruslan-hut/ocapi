@@ -74,7 +74,7 @@ func (s *MySql) Close() {
 
 func (s *MySql) Stats() string {
 	stats := s.db.Stats()
-	return fmt.Sprintf("OpenConns: %d, InUse: %d, Idle: %d",
+	return fmt.Sprintf("open: %d, inuse: %d, idle: %d",
 		stats.OpenConnections,
 		stats.InUse,
 		stats.Idle)
