@@ -30,12 +30,14 @@ type Core struct {
 	authKey   string
 	imagePath string
 	imageUrl  string
+	keys      map[string]string
 	log       *slog.Logger
 }
 
 func New(log *slog.Logger) *Core {
 	return &Core{
-		log: log.With(sl.Module("core")),
+		log:  log.With(sl.Module("core")),
+		keys: make(map[string]string),
 	}
 }
 
