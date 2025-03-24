@@ -50,7 +50,7 @@ func main() {
 			for {
 				select {
 				case <-ticker.C:
-					lg.Info("mysql stats", slog.String("connections", db.Stats()))
+					lg.Info("mysql", slog.String("stats", db.Stats()))
 				}
 			}
 		}()

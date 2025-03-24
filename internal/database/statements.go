@@ -132,7 +132,7 @@ func (s *MySql) stmtGetApiUsername() (*sql.Stmt, error) {
 		`SELECT
 					username
 				FROM %sapi 
-				WHERE "key"=? AND status=1
+				WHERE 'key'=? AND status=1
 				LIMIT 1`,
 		s.prefix,
 	)
