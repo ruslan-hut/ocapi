@@ -42,7 +42,7 @@ func ReadData(log *slog.Logger, handler Core) http.HandlerFunc {
 			slog.Int("limit", request.Limit),
 		)
 
-		data, err := handler.ReadDatabase(request.Table, request.Filter, request.Limit)
+		data, err := handler.ReadDatabase(request.Table, request.Filter, request.Limit, request.Plain)
 		if err != nil {
 			logger.Error("fetch data", sl.Err(err))
 			render.JSON(w, r, response.Error(fmt.Sprintf("Fetch data: %v", err)))
