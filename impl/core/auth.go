@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/base64"
 	"fmt"
 	"ocapi/entity"
 )
@@ -10,7 +11,10 @@ func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
 		return nil, fmt.Errorf("token not provided")
 	}
 
-	userName, err := c.repo.CheckApiKey(token)
+	// encode token to base64
+	tokenB64 := base64.StdEncoding.EncodeToString([]byte(token))
+
+	userName, err := c.repo.CheckApiKey(tokenB64)
 	if err == nil {
 		return &entity.User{
 			Username: userName,
