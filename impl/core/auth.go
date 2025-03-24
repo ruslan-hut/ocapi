@@ -16,14 +16,14 @@ func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
 
 	userName, err := c.repo.CheckApiKey(token)
 	if err == nil {
-		c.log.With("username", userName).Debug("User authenticated from database")
+		c.log.With("username", userName).Debug("user authenticated from database")
 		c.keys[token] = userName
 		return &entity.User{Username: userName}, nil
 	}
 
 	if c.authKey == token {
 		userName = "internal"
-		c.log.With("username", userName).Debug("User authenticated from config")
+		c.log.With("username", userName).Debug("user authenticated from config")
 		c.keys[token] = userName
 		return &entity.User{Username: userName}, nil
 	}
