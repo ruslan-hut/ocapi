@@ -124,7 +124,7 @@ func (s *MySql) stmtGetProductNotMainImage() (*sql.Stmt, error) {
 }
 
 func (s *MySql) stmtGetApiUsername() (*sql.Stmt, error) {
-	query := fmt.Sprintf("SELECT username FROM %sapi WHERE `key`=? AND status=1 LIMIT 1",
+	query := fmt.Sprintf(`SELECT username FROM %sapi WHERE "key"=? AND status=1 LIMIT 1`,
 		s.prefix,
 	)
 	return s.prepareStmt("getApiUsername", query)
