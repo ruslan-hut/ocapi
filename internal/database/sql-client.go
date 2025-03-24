@@ -85,7 +85,8 @@ func (s *MySql) ProductSearch(model string) (interface{}, error) {
 	return s.ReadTable(
 		fmt.Sprintf("%sproduct", s.prefix),
 		fmt.Sprintf("model='%s'", model),
-		0)
+		0,
+		false)
 }
 
 func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
