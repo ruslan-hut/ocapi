@@ -161,30 +161,15 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
-func (s *MySql) UpdateProductImage(productUid string, image string) error {
-	productId, err := s.getProductByUID(productUid)
+func (s *MySql) UpdateProductImage(productUid, image string) error {
+	stmt, err := s.stmtUpdateProductImage()
 	if err != nil {
-		return fmt.Errorf("product search: %v", err)
+		return err
 	}
-
-	if productId == 0 {
-		return fmt.Errorf("product decription: uid %s not found", productUid)
-	}
-
-	query := fmt.Sprintf(
-		`UPDATE %sproduct SET
-				image = ?
-			    WHERE product_id = ?`,
-		s.prefix,
-	)
-
-	_, err = s.db.Exec(query,
-		image,
-		productId)
+	_, err = stmt.Exec(image, productUid)
 	if err != nil {
 		return fmt.Errorf("update: %v", err)
 	}
-
 	return nil
 }
 

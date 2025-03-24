@@ -109,3 +109,8 @@ func (s *MySql) stmtUpdateProduct() (*sql.Stmt, error) {
 	)
 	return s.prepareStmt("updateProduct", query)
 }
+
+func (s *MySql) stmtUpdateProductImage() (*sql.Stmt, error) {
+	query := fmt.Sprintf(`UPDATE %sproduct SET image = ? WHERE model = ?`, s.prefix)
+	return s.prepareStmt("updateProductImage", query)
+}

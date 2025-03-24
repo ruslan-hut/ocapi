@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"ocapi/entity"
 	"os"
 	"path/filepath"
@@ -67,6 +68,15 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			if err != nil {
 				return fmt.Errorf("update image %s: %v", product.ProductUid, err)
 			}
+			c.log.With(
+				slog.String("product_id", product.ProductUid),
+				slog.String("image_url", imageUrl),
+			).Debug("image updated")
+		} else {
+			c.log.With(
+				slog.String("product_id", product.ProductUid),
+				slog.Bool("is_main", product.IsMain),
+			).Debug("not main image not implemented")
 		}
 	}
 
