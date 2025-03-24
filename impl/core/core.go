@@ -13,7 +13,7 @@ type Repository interface {
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
-	ReadTable(table, filter string, limit int) (interface{}, error)
+	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	UpdateProductImage(productUid string, image string) error
 	UpdateProductNotMainImage(productUid string, image string) error
 	Stats() string

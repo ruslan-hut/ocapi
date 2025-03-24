@@ -645,7 +645,7 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	return manufacturerId, nil
 }
 
-func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) {
+func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interface{}, error) {
 	query := fmt.Sprintf("SELECT * FROM %s", table)
 	if filter != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, filter)
@@ -678,6 +678,10 @@ func (s *MySql) ReadTable(table, filter string, limit int) (interface{}, error) 
 
 		rowMap := make(map[string]interface{})
 		for i, colName := range columns {
+			if plain {
+				rowMap[colName] = columnValues[i]
+				continue
+			}
 			if str, ok := columnValues[i].([]byte); ok {
 				decodedValue, e := base64.StdEncoding.DecodeString(string(str))
 				if e != nil {

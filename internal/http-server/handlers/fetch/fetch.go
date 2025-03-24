@@ -11,7 +11,7 @@ import (
 )
 
 type Core interface {
-	ReadDatabase(table, filter string, limit int) (interface{}, error)
+	ReadDatabase(table, filter string, limit int, plain bool) (interface{}, error)
 }
 
 func ReadData(log *slog.Logger, handler Core) http.HandlerFunc {
