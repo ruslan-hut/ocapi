@@ -73,10 +73,12 @@ func (s *MySql) Close() {
 
 func (s *MySql) Stats() string {
 	stats := s.db.Stats()
-	return fmt.Sprintf("open: %d, inuse: %d, idle: %d",
+	return fmt.Sprintf("open: %d, inuse: %d, idle: %d, stmts: %d, structure: %d",
 		stats.OpenConnections,
 		stats.InUse,
-		stats.Idle)
+		stats.Idle,
+		len(s.statements),
+		len(s.structure))
 }
 
 func (s *MySql) ProductSearch(model string) (interface{}, error) {
