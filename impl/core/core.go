@@ -17,6 +17,7 @@ type Repository interface {
 	UpdateProductImage(productUid string, image string) error
 	UpdateProductNotMainImage(productUid string, image string) error
 	Stats() string
+	CheckApiKey(key string) (string, error)
 }
 
 type MessageService interface {

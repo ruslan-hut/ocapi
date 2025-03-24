@@ -211,6 +211,23 @@ func (s *MySql) UpdateProductNotMainImage(productUid, image string) error {
 	return nil
 }
 
+func (s *MySql) CheckApiKey(key string) (string, error) {
+
+	stmt, err := s.stmtGetApiUsername()
+	if err != nil {
+		return "", err
+	}
+	var userName string
+	err = stmt.QueryRow(key).Scan(
+		&userName,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return userName, nil
+}
+
 func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) error {
 	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
 	if err != nil {
