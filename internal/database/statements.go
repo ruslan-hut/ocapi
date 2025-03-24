@@ -117,23 +117,14 @@ func (s *MySql) stmtUpdateProductImage() (*sql.Stmt, error) {
 
 func (s *MySql) stmtGetProductNotMainImage() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
-		`SELECT
-					product_image_id
-				FROM %sproduct_image 
-				WHERE product_id=? AND image=?
-				LIMIT 1`,
+		"SELECT product_image_id FROM %sproduct_image WHERE product_id=? AND image=? LIMIT 1",
 		s.prefix,
 	)
 	return s.prepareStmt("getProductNotMainImage", query)
 }
 
 func (s *MySql) stmtGetApiUsername() (*sql.Stmt, error) {
-	query := fmt.Sprintf(
-		`SELECT
-					username
-				FROM %sapi 
-				WHERE 'key'=? AND status=1
-				LIMIT 1`,
+	query := fmt.Sprintf("SELECT username FROM %sapi WHERE `key`=? AND status=1 LIMIT 1",
 		s.prefix,
 	)
 	return s.prepareStmt("getApiUsername", query)

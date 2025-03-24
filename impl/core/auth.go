@@ -3,7 +3,6 @@ package core
 import (
 	"encoding/base64"
 	"fmt"
-	"log/slog"
 	"ocapi/entity"
 )
 
@@ -14,7 +13,6 @@ func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
 
 	// encode token to base64
 	tokenB64 := base64.StdEncoding.EncodeToString([]byte(token))
-	c.log.With(slog.String("Base64", tokenB64)).Debug("Token")
 
 	userName, err := c.repo.CheckApiKey(tokenB64)
 	if err == nil {
