@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"ocapi/entity"
+	"ocapi/internal/lib/sl"
 )
 
 func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
@@ -20,6 +21,7 @@ func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
 			Username: userName,
 		}, nil
 	}
+	c.log.With(sl.Err(err)).Debug("check api key failed")
 
 	if c.authKey == token {
 		return &entity.User{
