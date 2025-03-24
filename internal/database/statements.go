@@ -114,3 +114,15 @@ func (s *MySql) stmtUpdateProductImage() (*sql.Stmt, error) {
 	query := fmt.Sprintf(`UPDATE %sproduct SET image = ? WHERE model = ?`, s.prefix)
 	return s.prepareStmt("updateProductImage", query)
 }
+
+func (s *MySql) stmtGetProductNotMainImage() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`SELECT
+					product_image_id
+				FROM %sproduct_image 
+				WHERE product_id=? AND image=?
+				LIMIT 1`,
+		s.prefix,
+	)
+	return s.prepareStmt("getProductNotMainImage", query)
+}

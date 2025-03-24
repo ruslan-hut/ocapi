@@ -60,8 +60,9 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			return fmt.Errorf("save image %s: %v", product.ProductUid, err)
 		}
 
+		imageUrl := fmt.Sprintf("%s%s%s", c.imageUrl, product.FileUid, fileExt)
+
 		if product.IsMain {
-			imageUrl := fmt.Sprintf("%s%s%s", c.imageUrl, product.FileUid, fileExt)
 			// Update image path in repository
 			err = c.repo.UpdateProductImage(product.ProductUid, imageUrl)
 
@@ -73,10 +74,16 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 				slog.String("image_url", imageUrl),
 			).Debug("image updated")
 		} else {
+			err = c.repo.UpdateProductNotMainImage(product.ProductUid, imageUrl)
+
+			if err != nil {
+				return fmt.Errorf("update image %s: %v", product.ProductUid, err)
+			}
+
 			c.log.With(
 				slog.String("product_id", product.ProductUid),
-				slog.Bool("is_main", product.IsMain),
-			).Debug("not main image not implemented")
+				slog.String("image_url", imageUrl),
+			).Debug("not main image updated")
 		}
 	}
 

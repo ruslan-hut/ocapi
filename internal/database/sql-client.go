@@ -175,6 +175,42 @@ func (s *MySql) UpdateProductImage(productUid, image string) error {
 	return nil
 }
 
+func (s *MySql) UpdateProductNotMainImage(productUid, image string) error {
+	productId, err := s.getProductByUID(productUid)
+	if err != nil {
+		return err
+	}
+
+	if productId == 0 {
+		return fmt.Errorf("no product found: %s", productUid)
+	}
+
+	stmt, err := s.stmtGetProductNotMainImage()
+	if err != nil {
+		return err
+	}
+	var productImageId int
+	err = stmt.QueryRow(productId, image).Scan(
+		&productImageId,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			userData := map[string]interface{}{
+				"product_id": productId,
+				"image":      image,
+			}
+
+			_, err = s.insert("product_image", userData)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) error {
 	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
 	if err != nil {
