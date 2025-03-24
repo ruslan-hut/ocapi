@@ -16,27 +16,13 @@ The project includes GitHub actions scripts for CI/CD, you can use as a template
 ## Setup
 
 ### Clone the repository
-```bash
-git clone https://github.com/yourusername/ocapi.git
-cd ocapi
-```
-
-### Install dependencies
-```bash
-go mod tidy
-```
+Clone repository to your local machine or server, build application, and deploy it alongside your OpenCart site.
 
 ### Configure the database
-Update the `config.yaml` file with your database credentials. Provide port, on which the OCAPI service will run, and the API key.
-
-```yaml
-# ...existing code...
-```
+Update the `config.yaml` file with your OpenCart database credentials. Provide port, on which the OCAPI service will run, and the API key.
 
 ### Run the application
-```bash
-go run main.go
-```
+Run the application manually or set up a service to run it in the background.
 
 ## API Description
 
