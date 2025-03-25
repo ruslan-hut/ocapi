@@ -202,4 +202,4 @@ listen:
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
-For any questions or inquiries, please contact developer at [dev@nomadus.net](dev@nomadus.net).
+For any questions or inquiries, please contact developer at [dev@nomadus.net](mailto:dev@nomadus.net).
