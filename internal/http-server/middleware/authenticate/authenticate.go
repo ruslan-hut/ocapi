@@ -84,6 +84,7 @@ func New(log *slog.Logger, auth Authenticate) func(next http.Handler) http.Handl
 			ctx := cont.PutUser(r.Context(), user)
 
 			ww.Header().Set("X-Request-ID", id)
+			ww.Header().Set("X-User", user.Username)
 			next.ServeHTTP(ww, r.WithContext(ctx))
 		}
 
