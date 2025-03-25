@@ -20,13 +20,44 @@ Clone repository to your local machine or server, build application, and deploy 
 
 ### Configure the database
 Update the `config.yaml` file with your OpenCart database credentials. Provide port, on which the OCAPI service will run, and the API key.
+```yaml
+---
 
+env: local               # Environment for logging
+## OCAPI service configuration
+listen:
+  bind_ip: 127.0.0.1     # IP address to bind the service
+  port: 9800             # Port to listen
+  key: api-key           # API key for the OCAPI service
+## OpenCart database connection
+sql:                     
+  enabled: false         # Enable or disable SQL connection
+  driver: mysqli         # Database driver
+  hostname: localhost    # Database hostname
+  username: username     # Database username
+  password: password     # Database password
+  database: db           # Database name
+  port: 8080             # Database port
+  prefix: prefix_        # Database table prefix
+## Product images
+images:
+  path: /path/to/images/ # Path to the images directory on the server
+  url: catalog/product/  # URL to the images directory
+```
 ### Run the application
 Run the application manually or set up a service to run it in the background.
 
 ## API Description
 
-To make requests to the API, you need to provide the API key in the `Authorization` header as a Bearer token. All methods return a JSON response with success status, status message, and timestamp. If data fails validation, the response will include an error message.
+### Authentication
+To make requests to the API, you need to provide Bearer token in the `Authorization` header.
+OCAPI supports two ways of token storage: in the configuration file, `listen` section, and in the OpenCart API section inside the admin panel.
+```yaml
+listen:
+  bind_ip: 127.0.0.1
+  port: 9800
+  key: api-key        # API key for the OCAPI service
+```
 
 ### Product Management
 
@@ -171,6 +202,4 @@ To make requests to the API, you need to provide the API key in the `Authorizati
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
-For any questions or inquiries, please contact developer at [dev@nomadus.net].
-
-`
+For any questions or inquiries, please contact developer at [dev@nomadus.net](dev@nomadus.net).
