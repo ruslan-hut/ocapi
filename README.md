@@ -46,6 +46,13 @@ images:
 ```
 ### Run the application
 Run the application manually or set up a service to run it in the background.
+Command line parameters:
+- `-conf` - path to the configuration file, default `config.yml`
+- `-log` - path to the log file `ocapi.log`, default `/var/log/`
+Example:
+```shell
+/usr/local/bin/ocapi -conf=/etc/conf/config.yml -log=/var/log/
+```
 
 ## API Description
 
