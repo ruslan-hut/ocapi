@@ -26,7 +26,8 @@ listen:
             "quantity": 6,
             "price": 25,
             "active": true,
-            "category_uid": "6666bc6a-a487-11e9-b6d3-00155d010d00"        }
+            "categories": ["29b666d4-bc22-11ee-b7b4-00155d018000"]
+        }
     ]
   }
   ```
