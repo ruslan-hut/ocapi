@@ -46,18 +46,20 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 	router.Use(render.SetContentType(render.ContentTypeJSON))
 	router.Use(authenticate.New(log, handler))
 
-	router.Route("/product", func(r chi.Router) {
-		r.Get("/{model}", product.ModelSearch(log, handler))
-		r.Post("/", product.SaveProduct(log, handler))
-		r.Post("/description", product.SaveDescription(log, handler))
-		r.Post("/image", product.SaveImage(log, handler))
-	})
-	router.Route("/category", func(r chi.Router) {
-		r.Post("/", category.SaveCategory(log, handler))
-		r.Post("/description", category.SaveDescription(log, handler))
-	})
-	router.Route("/fetch", func(r chi.Router) {
-		r.Post("/", fetch.ReadData(log, handler))
+	router.Route("/api/v1", func(v1 chi.Router) {
+		v1.Route("/product", func(r chi.Router) {
+			r.Get("/{model}", product.ModelSearch(log, handler))
+			r.Post("/", product.SaveProduct(log, handler))
+			r.Post("/description", product.SaveDescription(log, handler))
+			r.Post("/image", product.SaveImage(log, handler))
+		})
+		v1.Route("/category", func(r chi.Router) {
+			r.Post("/", category.SaveCategory(log, handler))
+			r.Post("/description", category.SaveDescription(log, handler))
+		})
+		v1.Route("/fetch", func(r chi.Router) {
+			r.Post("/", fetch.ReadData(log, handler))
+		})
 	})
 
 	httpLog := slog.NewLogLogger(log.Handler(), slog.LevelError)
