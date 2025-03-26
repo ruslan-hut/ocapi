@@ -253,13 +253,48 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		return fmt.Errorf("update: %v", err)
 	}
 
-	categoryId, err := s.getCategoryByUID(productData.CategoryUid)
-	if err == nil {
+	err = s.setProductCategories(productId, productData.Categories)
+	if err != nil {
+		return fmt.Errorf("set categories: %v", err)
+	}
+
+	return nil
+}
+
+func (s *MySql) setProductCategories(productId int64, categories []string) error {
+	if len(categories) == 0 {
+		return nil
+	}
+	query := fmt.Sprintf(`DELETE FROM %sproduct_to_category WHERE product_id=?`, s.prefix)
+	_, err := s.db.Exec(query, productId)
+	if err != nil {
+		return fmt.Errorf("delete: %v", err)
+	}
+
+	for _, categoryUID := range categories {
+		categoryId, err := s.getCategoryByUID(categoryUID)
+		if err != nil {
+			return fmt.Errorf("category search: %v", err)
+		}
+
 		if err = s.addProductToCategory(productId, categoryId); err != nil {
 			return fmt.Errorf("add to category: %v", err)
 		}
 	}
 
+	return nil
+}
+
+// addProductToCategory adds a product to a category with INSERT statement
+func (s *MySql) addProductToCategory(productId, categoryId int64) error {
+	query := fmt.Sprintf(`INSERT INTO %sproduct_to_category (
+                        product_id,
+                        category_id)
+			VALUES (?, ?)`, s.prefix)
+	_, err := s.db.Exec(query, productId, categoryId)
+	if err != nil {
+		return fmt.Errorf("insert: %v", err)
+	}
 	return nil
 }
 
@@ -299,11 +334,9 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 		return err
 	}
 
-	categoryId, err := s.getCategoryByUID(product.CategoryUid)
-	if err == nil {
-		if err = s.addProductToCategory(productId, categoryId); err != nil {
-			return err
-		}
+	err = s.setProductCategories(productId, product.Categories)
+	if err != nil {
+		return fmt.Errorf("set categories: %v", err)
 	}
 
 	if err = s.addProductToLayout(productId); err != nil {
@@ -581,26 +614,6 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-// Helper function to add product to category
-func (s *MySql) addProductToCategory(productId, categoryId int64) error {
-
-	query := fmt.Sprintf(`DELETE FROM %sproduct_to_category WHERE product_id=?`, s.prefix)
-	_, err := s.db.Exec(query, productId)
-	if err != nil {
-		return fmt.Errorf("delete: %v", err)
-	}
-
-	query = fmt.Sprintf(`INSERT INTO %sproduct_to_category (
-                        product_id,
-                        category_id)
-			VALUES (?, ?)`, s.prefix)
-	_, err = s.db.Exec(query, productId, categoryId)
-	if err != nil {
-		return fmt.Errorf("insert: %v", err)
 	}
 	return nil
 }

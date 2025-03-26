@@ -6,14 +6,14 @@ import (
 )
 
 type ProductData struct {
-	Uid          string  `json:"product_uid" validate:"required"`
-	Article      string  `json:"article,omitempty"`
-	Price        float32 `json:"price,omitempty"`
-	Quantity     int     `json:"quantity,omitempty"`
-	Manufacturer string  `json:"manufacturer,omitempty"`
-	Active       bool    `json:"active,omitempty"`
-	CategoryUid  string  `json:"category_uid,omitempty"`
-	BatchUID     string  `json:"batch_uid,omitempty"`
+	Uid          string   `json:"product_uid" validate:"required"`
+	Article      string   `json:"article,omitempty"`
+	Price        float32  `json:"price,omitempty"`
+	Quantity     int      `json:"quantity,omitempty"`
+	Manufacturer string   `json:"manufacturer,omitempty"`
+	Active       bool     `json:"active,omitempty"`
+	Categories   []string `json:"categories"`
+	BatchUID     string   `json:"batch_uid,omitempty"`
 }
 
 func (p *ProductData) Bind(_ *http.Request) error {
