@@ -247,7 +247,7 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		manufacturerId,
 		productData.Status(),
 		time.Now(),
-		productData.BatchUID,
+		productData.BatchUid,
 		productId)
 	if err != nil {
 		return fmt.Errorf("update: %v", err)
@@ -322,7 +322,7 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 		"length_class_id": 0,
 		"date_added":      time.Now(),
 		"date_modified":   time.Now(),
-		"batch_uid":       product.BatchUID,
+		"batch_uid":       product.BatchUid,
 	}
 
 	productId, err := s.insert("product", userData)

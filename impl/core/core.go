@@ -68,3 +68,11 @@ func (c *Core) SendEvent(message *entity.EventMessage) (interface{}, error) {
 	}
 	return nil, c.ms.SendEventMessage(message)
 }
+
+func (c *Core) FinishBatch(batchUid string) (*entity.BatchResult, error) {
+	return &entity.BatchResult{
+		BatchUid: batchUid,
+		Success:  true,
+		Message:  "Not implemented",
+	}, nil
+}

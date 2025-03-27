@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"ocapi/internal/config"
+	"ocapi/internal/http-server/handlers/batch"
 	"ocapi/internal/http-server/handlers/category"
 	"ocapi/internal/http-server/handlers/fetch"
 	"ocapi/internal/http-server/handlers/product"
@@ -30,6 +31,7 @@ type Handler interface {
 	product.Core
 	category.Core
 	fetch.Core
+	batch.Core
 }
 
 func New(conf *config.Config, log *slog.Logger, handler Handler) error {
@@ -59,6 +61,9 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 		})
 		v1.Route("/fetch", func(r chi.Router) {
 			r.Post("/", fetch.ReadData(log, handler))
+		})
+		v1.Route("/batch", func(r chi.Router) {
+			r.Get("/{batchUid}", batch.Result(log, handler))
 		})
 	})
 

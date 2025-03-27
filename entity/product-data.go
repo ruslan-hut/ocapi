@@ -7,13 +7,13 @@ import (
 
 type ProductData struct {
 	Uid          string   `json:"product_uid" validate:"required"`
-	Article      string   `json:"article,omitempty"`
-	Price        float32  `json:"price,omitempty"`
-	Quantity     int      `json:"quantity,omitempty"`
-	Manufacturer string   `json:"manufacturer,omitempty"`
-	Active       bool     `json:"active,omitempty"`
+	Article      string   `json:"article"`
+	Price        float32  `json:"price"`
+	Quantity     int      `json:"quantity"`
+	Manufacturer string   `json:"manufacturer"`
+	Active       bool     `json:"active"`
 	Categories   []string `json:"categories"`
-	BatchUID     string   `json:"batch_uid,omitempty"`
+	BatchUid     string   `json:"batch_uid"`
 }
 
 func (p *ProductData) Bind(_ *http.Request) error {
