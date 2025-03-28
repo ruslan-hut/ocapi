@@ -135,8 +135,14 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 		if err != nil {
 			return fmt.Errorf("category search: %v", err)
 		}
+		parentId, err := s.getCategoryByUID(categoryData.ParentUID)
+		if err != nil {
+			return fmt.Errorf("parent search: %v", err)
+		}
+
 		category := entity.CategoryFromCategoryData(categoryData)
 		category.CategoryId = categoryId
+		category.ParentId = parentId
 
 		err = s.updateCategory(category)
 
