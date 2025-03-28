@@ -133,11 +133,11 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 	for _, categoryData := range categoriesData {
 		categoryId, err := s.getCategoryByUID(categoryData.CategoryUID)
 		if err != nil {
-			return fmt.Errorf("category search: %v", err)
+			return fmt.Errorf("category search: %s %v", categoryData.CategoryUID, err)
 		}
 		parentId, err := s.getCategoryByUID(categoryData.ParentUID)
 		if err != nil {
-			return fmt.Errorf("parent search: %v", err)
+			return fmt.Errorf("parent search: %s %v", categoryData.ParentUID, err)
 		}
 
 		category := entity.CategoryFromCategoryData(categoryData)
@@ -520,6 +520,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			categoryId = 0
+			err = nil
 		}
 		return 0, err
 	}
