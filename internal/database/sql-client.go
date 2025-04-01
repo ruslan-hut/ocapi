@@ -748,7 +748,7 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	// calculate the number of products in the batch
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE batch_uid=?", s.prefix)
 	var count int
-	err := s.db.QueryRow(query).Scan(&count)
+	err := s.db.QueryRow(query, batchUid).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("batch count: %w", err)
 	}
