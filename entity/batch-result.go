@@ -7,3 +7,19 @@ type BatchResult struct {
 	Products   int    `json:"products"`
 	Categories int    `json:"categories"`
 }
+
+func NewBatchResult(batchUid string, err error) *BatchResult {
+	if err != nil {
+		return &BatchResult{
+			BatchUid: batchUid,
+			Success:  false,
+			Message:  err.Error(),
+		}
+	} else {
+		return &BatchResult{
+			BatchUid: batchUid,
+			Success:  true,
+			Message:  "",
+		}
+	}
+}

@@ -17,6 +17,8 @@ type Repository interface {
 	UpdateProductImage(productUid, image string, isMain bool) error
 	Stats() string
 	CheckApiKey(key string) (string, error)
+
+	FinalizeProductBatch(batchUid string) (int, error)
 }
 
 type MessageService interface {
@@ -69,9 +71,17 @@ func (c *Core) SendEvent(message *entity.EventMessage) (interface{}, error) {
 }
 
 func (c *Core) FinishBatch(batchUid string) (*entity.BatchResult, error) {
-	return &entity.BatchResult{
-		BatchUid: batchUid,
-		Success:  true,
-		Message:  "Not implemented",
-	}, nil
+	if c.repo == nil {
+		return nil, fmt.Errorf("repository not set")
+	}
+	if batchUid == "" {
+		return nil, fmt.Errorf("batch_uid not set")
+	}
+	productCount, err := c.repo.FinalizeProductBatch(batchUid)
+	if err != nil {
+		return entity.NewBatchResult(batchUid, err), nil
+	}
+	result := entity.NewBatchResult(batchUid, nil)
+	result.Products = productCount
+	return result, nil
 }

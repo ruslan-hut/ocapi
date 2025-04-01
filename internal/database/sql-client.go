@@ -744,9 +744,28 @@ func (s *MySql) MetaURL(input string) string {
 	return input
 }
 
-func (s *MySql) disActivateProducts(now string) error {
-	//_, err := s.db.ExecContext(s.ctx, `
-	//	UPDATE ?product SET status = 0 WHERE date_modified < ?`,
-	//	s.prefix, now)
-	return nil
+func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
+	// calculate the number of products in the batch
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE batch_uid=?", s.prefix)
+	var count int
+	err := s.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("batch count: %w", err)
+	}
+	if count == 0 {
+		return 0, fmt.Errorf("empty batch %s", batchUid)
+	}
+	// deactivate products not in the batch
+	query = fmt.Sprintf("UPDATE %sproduct SET status=0 WHERE batch_uid<>?", s.prefix)
+	_, err = s.db.Exec(query, batchUid)
+	if err != nil {
+		return 0, fmt.Errorf("update: %w", err)
+	}
+	// calculate the number of products that have status=1
+	query = fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE status=1", s.prefix)
+	err = s.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count: %w", err)
+	}
+	return count, nil
 }
