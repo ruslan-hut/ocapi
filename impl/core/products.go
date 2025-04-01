@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"ocapi/entity"
+	"ocapi/internal/lib/sl"
 	"os"
 	"path/filepath"
 )
@@ -68,17 +69,10 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			slog.Bool("is_main", product.IsMain),
 		)
 
-		if product.IsMain {
-			// Update image path in repository
-			err = c.repo.UpdateProductImage(product.ProductUid, imageUrl)
-			if err != nil {
-				return fmt.Errorf("product %s: %v", product.ProductUid, err)
-			}
-		} else {
-			err = c.repo.UpdateProductNotMainImage(product.ProductUid, imageUrl)
-			if err != nil {
-				return fmt.Errorf("product %s: %v", product.ProductUid, err)
-			}
+		err = c.repo.UpdateProductImage(product.ProductUid, imageUrl, product.IsMain)
+		if err != nil {
+			logger.Error("update product image", sl.Err(err))
+			return fmt.Errorf("product %s: %v", product.ProductUid, err)
 		}
 		logger.Debug("image loaded")
 	}

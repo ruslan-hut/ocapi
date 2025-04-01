@@ -14,8 +14,7 @@ type Repository interface {
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
-	UpdateProductImage(productUid string, image string) error
-	UpdateProductNotMainImage(productUid string, image string) error
+	UpdateProductImage(productUid, image string, isMain bool) error
 	Stats() string
 	CheckApiKey(key string) (string, error)
 }

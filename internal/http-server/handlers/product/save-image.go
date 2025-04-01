@@ -37,7 +37,6 @@ func SaveImage(log *slog.Logger, handler Core) http.HandlerFunc {
 
 		err := handler.LoadProductImages(body.Data)
 		if err != nil {
-			logger.Error("load images", sl.Err(err))
 			render.JSON(w, r, response.Error(fmt.Sprintf("Save image: %v", err)))
 			return
 		}

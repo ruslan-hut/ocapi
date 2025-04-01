@@ -170,7 +170,15 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
-func (s *MySql) UpdateProductImage(productUid, image string) error {
+func (s *MySql) UpdateProductImage(productUid, image string, isMain bool) error {
+	if isMain {
+		return s.updateMainProductImage(productUid, image)
+	} else {
+		return s.updateProductImage(productUid, image)
+	}
+}
+
+func (s *MySql) updateMainProductImage(productUid, image string) error {
 	stmt, err := s.stmtUpdateProductImage()
 	if err != nil {
 		return err
@@ -182,7 +190,7 @@ func (s *MySql) UpdateProductImage(productUid, image string) error {
 	return nil
 }
 
-func (s *MySql) UpdateProductNotMainImage(productUid, image string) error {
+func (s *MySql) updateProductImage(productUid, image string) error {
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
 		return err
