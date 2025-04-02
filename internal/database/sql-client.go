@@ -759,7 +759,13 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	query = fmt.Sprintf("UPDATE %sproduct SET status=0 WHERE batch_uid<>?", s.prefix)
 	_, err = s.db.Exec(query, batchUid)
 	if err != nil {
-		return 0, fmt.Errorf("update: %w", err)
+		return 0, fmt.Errorf("update status: %w", err)
+	}
+	// remove batch_uid from products
+	query = fmt.Sprintf("UPDATE %sproduct SET batch_uid=''", s.prefix)
+	_, err = s.db.Exec(query, batchUid)
+	if err != nil {
+		return 0, fmt.Errorf("update batch_uid: %w", err)
 	}
 	// calculate the number of products that have status=1
 	query = fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE status=1", s.prefix)
