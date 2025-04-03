@@ -763,7 +763,7 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	}
 	// remove batch_uid from products
 	query = fmt.Sprintf("UPDATE %sproduct SET batch_uid=''", s.prefix)
-	_, err = s.db.Exec(query, batchUid)
+	_, err = s.db.Exec(query)
 	if err != nil {
 		return 0, fmt.Errorf("update batch_uid: %w", err)
 	}
