@@ -12,6 +12,7 @@ import (
 	"ocapi/internal/http-server/handlers/attribute"
 	"ocapi/internal/http-server/handlers/batch"
 	"ocapi/internal/http-server/handlers/category"
+	"ocapi/internal/http-server/handlers/errors"
 	"ocapi/internal/http-server/handlers/fetch"
 	"ocapi/internal/http-server/handlers/product"
 	"ocapi/internal/http-server/handlers/service"
@@ -49,6 +50,8 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 	router.Use(middleware.Recoverer)
 	router.Use(render.SetContentType(render.ContentTypeJSON))
 	router.Use(authenticate.New(log, handler))
+
+	router.NotFound(errors.NotFound(log))
 
 	router.Route("/api/v1", func(v1 chi.Router) {
 		v1.Route("/product", func(r chi.Router) {
