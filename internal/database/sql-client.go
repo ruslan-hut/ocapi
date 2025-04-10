@@ -62,6 +62,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if err = sdb.addColumnIfNotExists("category", "category_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
+	if err = sdb.addColumnIfNotExists("attribute", "attribute_uid", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
 
 	return sdb, nil
 }
