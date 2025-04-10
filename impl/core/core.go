@@ -11,10 +11,12 @@ type Repository interface {
 	ProductSearch(model string) (interface{}, error)
 	SaveProducts(products []*entity.ProductData) error
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
+	UpdateProductImage(productUid, image string, isMain bool) error
+
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
+
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
-	UpdateProductImage(productUid, image string, isMain bool) error
 	Stats() string
 	CheckApiKey(key string) (string, error)
 

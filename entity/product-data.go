@@ -13,6 +13,7 @@ type ProductData struct {
 	Manufacturer string   `json:"manufacturer"`
 	Active       bool     `json:"active"`
 	Categories   []string `json:"categories"`
+	Attributes   []string `json:"attributes"`
 	BatchUid     string   `json:"batch_uid"`
 }
 

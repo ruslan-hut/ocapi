@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"ocapi/internal/config"
+	"ocapi/internal/http-server/handlers/attribute"
 	"ocapi/internal/http-server/handlers/batch"
 	"ocapi/internal/http-server/handlers/category"
 	"ocapi/internal/http-server/handlers/fetch"
@@ -29,6 +30,7 @@ type Handler interface {
 	authenticate.Authenticate
 	service.Service
 	product.Core
+	attribute.Core
 	category.Core
 	fetch.Core
 	batch.Core
@@ -53,7 +55,11 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 			r.Get("/{model}", product.ModelSearch(log, handler))
 			r.Post("/", product.SaveProduct(log, handler))
 			r.Post("/description", product.SaveDescription(log, handler))
+			r.Post("/attribute", product.SaveAttribute(log, handler))
 			r.Post("/image", product.SaveImage(log, handler))
+		})
+		v1.Route("/attribute", func(r chi.Router) {
+			r.Post("/", attribute.Save(log, handler))
 		})
 		v1.Route("/category", func(r chi.Router) {
 			r.Post("/", category.SaveCategory(log, handler))
