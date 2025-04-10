@@ -52,6 +52,7 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 	router.Use(authenticate.New(log, handler))
 
 	router.NotFound(errors.NotFound(log))
+	router.MethodNotAllowed(errors.NotAllowed(log))
 
 	router.Route("/api/v1", func(v1 chi.Router) {
 		v1.Route("/product", func(r chi.Router) {
