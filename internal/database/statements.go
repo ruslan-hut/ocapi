@@ -44,6 +44,11 @@ func (s *MySql) stmtCategoryId() (*sql.Stmt, error) {
 	return s.prepareStmt("selectCategoryId", query)
 }
 
+func (s *MySql) stmtSelectAttributeId() (*sql.Stmt, error) {
+	query := fmt.Sprintf(`SELECT attribute_id FROM %sattribute WHERE attribute_uid=? LIMIT 1`, s.prefix)
+	return s.prepareStmt("selectAttributeId", query)
+}
+
 func (s *MySql) stmtCategoryDescription() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`SELECT
@@ -113,6 +118,18 @@ func (s *MySql) stmtUpdateProduct() (*sql.Stmt, error) {
 func (s *MySql) stmtUpdateProductImage() (*sql.Stmt, error) {
 	query := fmt.Sprintf(`UPDATE %sproduct SET image = ? WHERE model = ?`, s.prefix)
 	return s.prepareStmt("updateProductImage", query)
+}
+
+func (s *MySql) stmtUpdateAttribute() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`UPDATE %sattribute SET
+				attribute_uid = ?, 
+				attribute_group_id = ?, 
+                sort_order = ?,
+			    WHERE attribute_id = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("updateAttribute", query)
 }
 
 func (s *MySql) stmtGetProductNotMainImage() (*sql.Stmt, error) {

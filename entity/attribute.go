@@ -13,7 +13,7 @@ type Attribute struct {
 }
 
 type AttributeDescription struct {
-	LanguageId int    `json:"language_id" validate:"required"`
+	LanguageId int64  `json:"language_id" validate:"required"`
 	Name       string `json:"name" validate:"required"`
 }
 

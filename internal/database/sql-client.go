@@ -173,6 +173,32 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
+func (s *MySql) SaveAttributes(attributes []*entity.Attribute) error {
+	for _, attribute := range attributes {
+		attributeId, err := s.getAttributeByUID(attribute.Uid)
+		if err != nil {
+			return fmt.Errorf("attribute search: %v", err)
+		}
+
+		if attributeId == 0 {
+			attributeId, err = s.addAttribute(attribute)
+		} else {
+			err = s.updateAttribute(attributeId, attribute)
+		}
+
+		for _, attributeDesc := range attribute.Descriptions {
+			if err = s.upsertAttributeDescription(attributeId, attributeDesc); err != nil {
+				return fmt.Errorf("description: %v", err)
+			}
+		}
+
+		if err != nil {
+			return fmt.Errorf("attribute %s: %v", attribute.Uid, err)
+		}
+	}
+	return nil
+}
+
 func (s *MySql) UpdateProductImage(productUid, image string, isMain bool) error {
 	if isMain {
 		return s.updateMainProductImage(productUid, image)
@@ -504,6 +530,106 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 	return nil
 }
 
+func (s *MySql) addAttribute(attribute *entity.Attribute) (int64, error) {
+	userData := map[string]interface{}{
+		"attribute_uid":      attribute.Uid,
+		"attribute_group_id": attribute.GroupId,
+		"sort_order":         attribute.SortOrder,
+	}
+
+	attributeId, err := s.insert("attribute", userData)
+	if err != nil {
+		return 0, err
+	}
+
+	return attributeId, nil
+}
+
+func (s *MySql) updateAttribute(attributeId int64, attribute *entity.Attribute) error {
+
+	stmt, err := s.stmtUpdateAttribute()
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(
+		attribute.Uid,
+		attribute.GroupId,
+		attribute.SortOrder,
+		attributeId)
+	if err != nil {
+		return fmt.Errorf("update: %v", err)
+	}
+
+	return nil
+}
+
+func (s *MySql) findAttributeDescription(attributeId, languageId int64) (*entity.AttributeDescription, error) {
+	query := fmt.Sprintf(
+		`SELECT
+					name
+				FROM %sattribute_description 
+				WHERE attribute_id=? AND language_id=? LIMIT 1`,
+		s.prefix,
+	)
+	rows, err := s.db.Query(query, attributeId, languageId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var attributeDesc entity.AttributeDescription
+		if err = rows.Scan(
+			&attributeDesc.Name,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		return &attributeDesc, nil
+	}
+
+	return nil, nil
+}
+
+func (s *MySql) upsertAttributeDescription(attributeId int64, attributeDescription *entity.AttributeDescription) error {
+	var query string
+	var err error
+
+	desc, err := s.findAttributeDescription(attributeId, attributeDescription.LanguageId)
+	if err != nil {
+		return fmt.Errorf("lookup attribute description: %v", err)
+	}
+
+	if desc != nil {
+		query = fmt.Sprintf(
+			`UPDATE %sattribute_description SET
+					name = ?
+			    WHERE attribute_id = ? AND language_id = ?`,
+			s.prefix,
+		)
+		_, err = s.db.Exec(query,
+			attributeDescription.Name,
+			attributeId,
+			attributeDescription.LanguageId)
+		if err != nil {
+			return fmt.Errorf("update: %v", err)
+		}
+	} else {
+
+		userData := map[string]interface{}{
+			"attribute_id": attributeId,
+			"language_id":  attributeDescription.LanguageId,
+			"name":         attributeDescription.Name,
+		}
+
+		_, err = s.insert("attribute_description", userData)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *MySql) getProductByUID(uid string) (int64, error) {
 	stmt, err := s.stmtSelectProductId()
 	if err != nil {
@@ -549,6 +675,23 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	}
 
 	return categoryId, nil
+}
+
+func (s *MySql) getAttributeByUID(uid string) (int64, error) {
+	stmt, err := s.stmtSelectAttributeId()
+	if err != nil {
+		return 0, err
+	}
+
+	var attributeId int64
+	err = stmt.QueryRow(uid).Scan(&attributeId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return attributeId, nil
 }
 
 func (s *MySql) updateCategory(category *entity.Category) error {

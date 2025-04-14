@@ -16,6 +16,8 @@ type Repository interface {
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
 
+	SaveAttributes(attributes []*entity.Attribute) error
+
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	Stats() string
 	CheckApiKey(key string) (string, error)
