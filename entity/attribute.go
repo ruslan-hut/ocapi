@@ -7,8 +7,8 @@ import (
 
 type Attribute struct {
 	Uid          string                  `json:"attribute_uid" validate:"required"`
-	GroupId      int                     `json:"attribute_group_id" validate:"required"`
-	SortOrder    int                     `json:"sort_order"`
+	GroupId      int64                   `json:"attribute_group_id" validate:"required"`
+	SortOrder    int64                   `json:"sort_order"`
 	Descriptions []*AttributeDescription `json:"descriptions" validate:"required,dive"`
 }
 
