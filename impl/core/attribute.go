@@ -20,15 +20,9 @@ func (c *Core) LoadProductAttributes(attributes []*entity.ProductAttribute) erro
 	if c.repo == nil {
 		return fmt.Errorf("repository not set")
 	}
-	if len(attributes) == 0 {
-		return nil
+	err := c.repo.SaveProductAttributes(attributes)
+	if err != nil {
+		return err
 	}
-
-	//for _, product := range products {
-	//	if err := c.repo.SaveProductAttribute(product); err != nil {
-	//		return err
-	//	}
-	//}
-
 	return nil
 }

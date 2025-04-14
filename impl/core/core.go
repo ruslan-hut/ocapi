@@ -18,6 +18,8 @@ type Repository interface {
 
 	SaveAttributes(attributes []*entity.Attribute) error
 
+	SaveProductAttributes(attributes []*entity.ProductAttribute) error
+
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	Stats() string
 	CheckApiKey(key string) (string, error)

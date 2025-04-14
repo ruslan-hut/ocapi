@@ -199,6 +199,18 @@ func (s *MySql) SaveAttributes(attributes []*entity.Attribute) error {
 	return nil
 }
 
+func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribute) error {
+	for _, productAttribute := range productAttributes {
+
+		err := s.upsertProductAttribute(productAttribute)
+
+		if err != nil {
+			return fmt.Errorf("product attribute %s: %v", productAttribute.ProductUid, err)
+		}
+	}
+	return nil
+}
+
 func (s *MySql) UpdateProductImage(productUid, image string, isMain bool) error {
 	if isMain {
 		return s.updateMainProductImage(productUid, image)
@@ -622,6 +634,87 @@ func (s *MySql) upsertAttributeDescription(attributeId int64, attributeDescripti
 		}
 
 		_, err = s.insert("attribute_description", userData)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func (s *MySql) findProductAttribute(productId, attributeId, languageId int64) (*entity.ProductAttribute, error) {
+	query := fmt.Sprintf(
+		`SELECT
+					text
+				FROM %sproduct_attribute
+				WHERE product_id=? AND attribute_id=? AND language_id=? LIMIT 1`,
+		s.prefix,
+	)
+	rows, err := s.db.Query(query,
+		productId,
+		attributeId,
+		languageId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var productAttribute entity.ProductAttribute
+		if err = rows.Scan(
+			&productAttribute.Text,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		return &productAttribute, nil
+	}
+
+	return nil, nil
+}
+
+func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute) error {
+	var query string
+	var err error
+
+	productId, err := s.getProductByUID(productAttribute.ProductUid)
+	if err != nil {
+		return fmt.Errorf("product search: %v", err)
+	}
+
+	attributeId, err := s.getAttributeByUID(productAttribute.AttributeUid)
+	if err != nil {
+		return fmt.Errorf("attribute search: %v", err)
+	}
+
+	desc, err := s.findProductAttribute(productId, attributeId, productAttribute.LanguageId)
+	if err != nil {
+		return fmt.Errorf("lookup product attribute: %v", err)
+	}
+
+	if desc != nil && productId != 0 && attributeId != 0 {
+		query = fmt.Sprintf(
+			`UPDATE %sproduct_attribute SET
+					text = ?
+			    WHERE product_id=? AND attribute_id=? AND language_id=?`,
+			s.prefix,
+		)
+		_, err = s.db.Exec(query,
+			productAttribute.Text,
+			productId,
+			attributeId,
+			productAttribute.LanguageId)
+		if err != nil {
+			return fmt.Errorf("update: %v", err)
+		}
+	} else {
+
+		userData := map[string]interface{}{
+			"product_id":   productId,
+			"attribute_id": attributeId,
+			"language_id":  productAttribute.LanguageId,
+			"name":         productAttribute.Text,
+		}
+
+		_, err = s.insert("product_attribute", userData)
 		if err != nil {
 			return err
 		}

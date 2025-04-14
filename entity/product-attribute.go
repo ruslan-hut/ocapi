@@ -8,7 +8,7 @@ import (
 type ProductAttribute struct {
 	ProductUid   string `json:"product_uid" validate:"required"`
 	AttributeUid string `json:"attribute_uid" validate:"required"`
-	LanguageId   int    `json:"language_id" validate:"required"`
+	LanguageId   int64  `json:"language_id" validate:"required"`
 	Text         string `json:"text" validate:"required"`
 }
 
