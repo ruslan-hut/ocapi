@@ -125,7 +125,7 @@ func (s *MySql) stmtUpdateAttribute() (*sql.Stmt, error) {
 		`UPDATE %sattribute SET
 				attribute_uid = ?, 
 				attribute_group_id = ?, 
-                sort_order = ?,
+                sort_order = ?
 			    WHERE attribute_id = ?`,
 		s.prefix,
 	)
