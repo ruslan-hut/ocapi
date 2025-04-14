@@ -690,7 +690,7 @@ func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute
 		return fmt.Errorf("lookup product attribute: %v", err)
 	}
 
-	if desc != nil && productId != 0 && attributeId != 0 {
+	if desc != nil {
 		query = fmt.Sprintf(
 			`UPDATE %sproduct_attribute SET
 					text = ?
@@ -711,7 +711,7 @@ func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute
 			"product_id":   productId,
 			"attribute_id": attributeId,
 			"language_id":  productAttribute.LanguageId,
-			"name":         productAttribute.Text,
+			"text":         productAttribute.Text,
 		}
 
 		_, err = s.insert("product_attribute", userData)
