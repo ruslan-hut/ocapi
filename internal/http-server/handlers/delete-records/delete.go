@@ -41,6 +41,12 @@ func TableRecords(log *slog.Logger, handler Core) http.HandlerFunc {
 			slog.String("filter", request.Filter),
 		)
 
+		if request.Filter == "" {
+			logger.Error("filter is required")
+			render.JSON(w, r, response.Error("Filter is required"))
+			return
+		}
+
 		data, err := handler.DeleteFromTable(request.Table, request.Filter)
 		if err != nil {
 			logger.Error("delete data", sl.Err(err))
