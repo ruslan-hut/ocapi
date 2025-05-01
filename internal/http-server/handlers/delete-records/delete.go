@@ -43,11 +43,11 @@ func TableRecords(log *slog.Logger, handler Core) http.HandlerFunc {
 
 		data, err := handler.DeleteFromTable(request.Table, request.Filter)
 		if err != nil {
-			logger.Error("fetch data", sl.Err(err))
-			render.JSON(w, r, response.Error(fmt.Sprintf("Fetch data: %v", err)))
+			logger.Error("delete data", sl.Err(err))
+			render.JSON(w, r, response.Error(fmt.Sprintf("Failed: %v", err)))
 			return
 		}
-		logger.Debug("fetch data")
+		logger.Debug("delete data")
 
 		render.JSON(w, r, response.Ok(data))
 	}

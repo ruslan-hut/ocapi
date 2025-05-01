@@ -978,7 +978,7 @@ func (s *MySql) DeleteRecords(table, filter string) (int64, error) {
 	}
 	result, err := s.db.Exec(query)
 	if err != nil {
-		return 0, fmt.Errorf("delete: %w", err)
+		return 0, fmt.Errorf("exec: %w", err)
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
