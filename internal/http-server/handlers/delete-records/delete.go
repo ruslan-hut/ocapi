@@ -47,7 +47,9 @@ func TableRecords(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Failed: %v", err)))
 			return
 		}
-		logger.Debug("delete data")
+		logger.With(
+			slog.Int64("rows_affected", data),
+		).Debug("delete data")
 
 		render.JSON(w, r, response.Ok(data))
 	}
