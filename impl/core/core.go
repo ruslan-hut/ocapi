@@ -21,6 +21,7 @@ type Repository interface {
 	SaveProductAttributes(attributes []*entity.ProductAttribute) error
 
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
+	DeleteRecords(table, filter string) (int64, error)
 	Stats() string
 	CheckApiKey(key string) (string, error)
 

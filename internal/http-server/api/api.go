@@ -12,6 +12,7 @@ import (
 	"ocapi/internal/http-server/handlers/attribute"
 	"ocapi/internal/http-server/handlers/batch"
 	"ocapi/internal/http-server/handlers/category"
+	"ocapi/internal/http-server/handlers/delete-records"
 	"ocapi/internal/http-server/handlers/errors"
 	"ocapi/internal/http-server/handlers/fetch"
 	"ocapi/internal/http-server/handlers/product"
@@ -35,6 +36,7 @@ type Handler interface {
 	category.Core
 	fetch.Core
 	batch.Core
+	delete_records.Core
 }
 
 func New(conf *config.Config, log *slog.Logger, handler Handler) error {
@@ -71,6 +73,9 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 		})
 		v1.Route("/fetch", func(r chi.Router) {
 			r.Post("/", fetch.ReadData(log, handler))
+		})
+		v1.Route("/delete", func(r chi.Router) {
+			r.Post("/", delete_records.TableRecords(log, handler))
 		})
 		v1.Route("/batch", func(r chi.Router) {
 			r.Get("/{batchUid}", batch.Result(log, handler))

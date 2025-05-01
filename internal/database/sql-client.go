@@ -971,6 +971,22 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 	return results, nil
 }
 
+func (s *MySql) DeleteRecords(table, filter string) (int64, error) {
+	query := fmt.Sprintf("DELETE FROM %s", table)
+	if filter != "" {
+		query = fmt.Sprintf("%s WHERE %s", query, filter)
+	}
+	result, err := s.db.Exec(query)
+	if err != nil {
+		return 0, fmt.Errorf("delete: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("rows affected: %w", err)
+	}
+	return rowsAffected, nil
+}
+
 // Placeholder for the TransLit function
 func (s *MySql) TransLit(input string) string {
 	// Transliteration logic here
