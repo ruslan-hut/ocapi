@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 )
 
-func (c *Core) FindModel(model string) (interface{}, error) {
+func (c *Core) FindProduct(uid string) (interface{}, error) {
 	if c.repo == nil {
 		return nil, fmt.Errorf("repository not initialized")
 	}
-	return c.repo.ProductSearch(model)
+	return c.repo.ProductSearch(uid)
 }
 
 func (c *Core) LoadProducts(products []*entity.ProductData) error {

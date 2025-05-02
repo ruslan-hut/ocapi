@@ -8,7 +8,7 @@ import (
 )
 
 type Repository interface {
-	ProductSearch(model string) (interface{}, error)
+	ProductSearch(uid string) (interface{}, error)
 	SaveProducts(products []*entity.ProductData) error
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
 	UpdateProductImage(productUid, image string, isMain bool) error

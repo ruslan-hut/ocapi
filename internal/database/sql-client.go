@@ -367,9 +367,8 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 
 	// known columns
 	userData := map[string]interface{}{
-		"product_uid": product.Uid,
-		"model":       product.Article,
-		//"sku":             product.Article,
+		"product_uid":     product.Uid,
+		"model":           product.Article,
 		"price":           product.Price,
 		"manufacturer_id": manufacturerId,
 		"quantity":        product.Quantity,
