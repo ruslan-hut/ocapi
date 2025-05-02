@@ -35,7 +35,7 @@ func (s *MySql) closeStmt() {
 }
 
 func (s *MySql) stmtSelectProductId() (*sql.Stmt, error) {
-	query := fmt.Sprintf(`SELECT product_id FROM %sproduct WHERE model=? LIMIT 1`, s.prefix)
+	query := fmt.Sprintf(`SELECT product_id FROM %sproduct WHERE product_uid=? LIMIT 1`, s.prefix)
 	return s.prepareStmt("selectProductId", query)
 }
 
@@ -101,7 +101,7 @@ func (s *MySql) stmtUpdateCategory() (*sql.Stmt, error) {
 func (s *MySql) stmtUpdateProduct() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %sproduct SET
-				sku = ?, 
+				model = ?, 
 				quantity = ?, 
                 stock_status_id = ?,
 				price = ?, 
@@ -116,7 +116,7 @@ func (s *MySql) stmtUpdateProduct() (*sql.Stmt, error) {
 }
 
 func (s *MySql) stmtUpdateProductImage() (*sql.Stmt, error) {
-	query := fmt.Sprintf(`UPDATE %sproduct SET image = ? WHERE model = ?`, s.prefix)
+	query := fmt.Sprintf(`UPDATE %sproduct SET image = ? WHERE product_uid = ?`, s.prefix)
 	return s.prepareStmt("updateProductImage", query)
 }
 

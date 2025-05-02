@@ -70,7 +70,7 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	}
 
 	// copy uid values
-	_, _ = sdb.db.Exec("UPDATE oc_product SET product_uid = model")
+	//_, _ = sdb.db.Exec("UPDATE oc_product SET model = sku")
 
 	return sdb, nil
 }
@@ -90,10 +90,10 @@ func (s *MySql) Stats() string {
 		len(s.structure))
 }
 
-func (s *MySql) ProductSearch(model string) (interface{}, error) {
+func (s *MySql) ProductSearch(uid string) (interface{}, error) {
 	return s.ReadTable(
 		fmt.Sprintf("%sproduct", s.prefix),
-		fmt.Sprintf("model='%s'", model),
+		fmt.Sprintf("product_uid='%s'", uid),
 		0,
 		false)
 }
@@ -367,8 +367,9 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 
 	// known columns
 	userData := map[string]interface{}{
-		"model":           product.Uid,
-		"sku":             product.Article,
+		"product_uid": product.Uid,
+		"model":       product.Article,
+		//"sku":             product.Article,
 		"price":           product.Price,
 		"manufacturer_id": manufacturerId,
 		"quantity":        product.Quantity,
@@ -404,24 +405,6 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 		return err
 	}
 
-	// Insert SEO URL
-	//seoURL := s.TransLit(product.Model)
-	//seoURL = s.MetaURL(seoURL)
-	//seoURL = fmt.Sprintf("%s", seoURL)
-	//_, err = s.db.ExecContext(s.ctx, `
-	//	INSERT INTO seo_url (store_id, language_id, query, keyword) VALUES
-	//	('0', 1, ?, ?), ('0', 2, ?, ?), ('0', 3, ?, ?)`,
-	//	fmt.Sprintf("product_id=%d", productId), seoURL,
-	//	fmt.Sprintf("product_id=%d", productId), seoURL,
-	//	fmt.Sprintf("product_id=%d", productId), seoURL)
-	//if err != nil {
-	//	return fmt.Errorf("failed to insert SEO URL: %v", err)
-	//}
-
-	//err = s.disActivateProducts(nowDate)
-	//if err != nil {
-	//	return fmt.Errorf("failed to disactivate products: %v", err)
-	//}
 	return nil
 }
 
