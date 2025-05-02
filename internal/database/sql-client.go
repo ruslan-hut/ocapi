@@ -70,7 +70,7 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	}
 
 	// copy uid values
-	//_, _ = sdb.db.Exec("UPDATE oc_product SET model = sku")
+	_, _ = sdb.db.Exec("UPDATE oc_product SET model = sku WHERE model<>sku AND sku<>''")
 
 	return sdb, nil
 }
