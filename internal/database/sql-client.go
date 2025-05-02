@@ -56,6 +56,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if err = sdb.addColumnIfNotExists("product", "batch_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
+	if err = sdb.addColumnIfNotExists("product", "product_uid", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
 	if err = sdb.addColumnIfNotExists("category", "parent_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
@@ -65,6 +68,8 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if err = sdb.addColumnIfNotExists("attribute", "attribute_uid", "VARCHAR(64) NOT NULL"); err != nil {
 		return nil, err
 	}
+
+	_, _ = sdb.db.Exec("UPDATE oc_product SET product_uid = model WHERE product_uid IS NULL")
 
 	return sdb, nil
 }
