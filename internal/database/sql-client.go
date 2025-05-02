@@ -69,7 +69,7 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, err
 	}
 
-	_, _ = sdb.db.Exec("UPDATE oc_product SET product_uid = model WHERE product_uid IS NULL")
+	_, _ = sdb.db.Exec("UPDATE oc_product SET product_uid = model")
 
 	return sdb, nil
 }
