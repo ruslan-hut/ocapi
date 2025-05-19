@@ -11,15 +11,15 @@ import (
 	"ocapi/internal/lib/sl"
 )
 
-func ModelSearch(log *slog.Logger, handler Core) http.HandlerFunc {
+func UidSearch(log *slog.Logger, handler Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mod := sl.Module("http.handlers.product")
-		model := chi.URLParam(r, "model")
+		uid := chi.URLParam(r, "uid")
 
 		logger := log.With(
 			mod,
 			slog.String("request_id", middleware.GetReqID(r.Context())),
-			slog.String("model", model),
+			slog.String("uid", uid),
 		)
 
 		if handler == nil {
@@ -28,7 +28,7 @@ func ModelSearch(log *slog.Logger, handler Core) http.HandlerFunc {
 			return
 		}
 
-		product, err := handler.FindModel(model)
+		product, err := handler.FindProduct(uid)
 		if err != nil {
 			logger.Error("product search", sl.Err(err))
 			render.JSON(w, r, response.Error(fmt.Sprintf("Search failed: %v", err)))

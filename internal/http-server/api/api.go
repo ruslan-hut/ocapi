@@ -58,7 +58,7 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 
 	router.Route("/api/v1", func(v1 chi.Router) {
 		v1.Route("/product", func(r chi.Router) {
-			r.Get("/{model}", product.ModelSearch(log, handler))
+			r.Get("/{uid}", product.UidSearch(log, handler))
 			r.Post("/", product.SaveProduct(log, handler))
 			r.Post("/description", product.SaveDescription(log, handler))
 			r.Post("/attribute", product.SaveAttribute(log, handler))
