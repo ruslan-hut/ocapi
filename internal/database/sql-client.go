@@ -1011,3 +1011,82 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	}
 	return count, nil
 }
+
+func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
+	stmt, err := s.stmtSelectOrder()
+	if err != nil {
+		return nil, err
+	}
+	var order entity.Order
+	err = stmt.QueryRow(orderId).Scan(
+		&order.OrderID,
+		&order.TransactionID,
+		&order.InvoiceNo,
+		&order.InvoicePrefix,
+		&order.StoreID,
+		&order.StoreName,
+		&order.StoreURL,
+		&order.CustomerID,
+		&order.CustomerGroupID,
+		&order.Firstname,
+		&order.Lastname,
+		&order.Email,
+		&order.Telephone,
+		&order.CustomField,
+		&order.PaymentFirstname,
+		&order.PaymentLastname,
+		&order.PaymentCompany,
+		&order.PaymentAddress1,
+		&order.PaymentAddress2,
+		&order.PaymentCity,
+		&order.PaymentPostcode,
+		&order.PaymentCountry,
+		&order.PaymentCountryID,
+		&order.PaymentZone,
+		&order.PaymentZoneID,
+		&order.PaymentAddressFormat,
+		&order.PaymentCustomField,
+		&order.PaymentMethod,
+		&order.PaymentCode,
+		&order.ShippingFirstname,
+		&order.ShippingLastname,
+		&order.ShippingCompany,
+		&order.ShippingAddress1,
+		&order.ShippingAddress2,
+		&order.ShippingCity,
+		&order.ShippingPostcode,
+		&order.ShippingCountry,
+		&order.ShippingCountryID,
+		&order.ShippingZone,
+		&order.ShippingZoneID,
+		&order.ShippingAddressFormat,
+		&order.ShippingCustomField,
+		&order.ShippingMethod,
+		&order.ShippingCode,
+		&order.Comment,
+		&order.Total,
+		&order.OrderStatusID,
+		&order.AffiliateID,
+		&order.Commission,
+		&order.MarketingID,
+		&order.Tracking,
+		&order.LanguageID,
+		&order.LanguageCode,
+		&order.CurrencyID,
+		&order.CurrencyCode,
+		&order.CurrencyValue,
+		&order.IP,
+		&order.ForwardedIP,
+		&order.UserAgent,
+		&order.AcceptLanguage,
+		&order.DateAdded,
+		&order.DateModified,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // no order found
+		}
+		return nil, fmt.Errorf("scan order: %w", err)
+	}
+	return &order, nil
+}
