@@ -82,6 +82,17 @@ func (s *MySql) stmtUpdateCategoryDescription() (*sql.Stmt, error) {
 	return s.prepareStmt("updateCategoryDescription", query)
 }
 
+func (s *MySql) stmtUpdateCategoryName() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`UPDATE %scategory_description
+				SET
+					name=?
+				WHERE category_id=? AND language_id=?`,
+		s.prefix,
+	)
+	return s.prepareStmt("updateCategoryName", query)
+}
+
 func (s *MySql) stmtUpdateCategory() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %scategory

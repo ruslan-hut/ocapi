@@ -828,15 +828,26 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 	}
 
 	if description != nil {
-		stmt, err := s.stmtUpdateCategoryDescription()
-		if err != nil {
-			return err
+		if description.Description != "" {
+			stmt, e := s.stmtUpdateCategoryDescription()
+			if e != nil {
+				return e
+			}
+			_, err = stmt.Exec(
+				categoryDesc.Name,
+				categoryDesc.Description,
+				categoryDesc.CategoryId,
+				categoryDesc.LanguageId)
+		} else {
+			stmt, e := s.stmtUpdateCategoryName()
+			if e != nil {
+				return e
+			}
+			_, err = stmt.Exec(
+				categoryDesc.Name,
+				categoryDesc.CategoryId,
+				categoryDesc.LanguageId)
 		}
-		_, err = stmt.Exec(
-			categoryDesc.Name,
-			categoryDesc.Description,
-			categoryDesc.CategoryId,
-			categoryDesc.LanguageId)
 		if err != nil {
 			return fmt.Errorf("update: %v", err)
 		}
