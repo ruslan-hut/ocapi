@@ -825,7 +825,7 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 	}
 
 	if description != nil {
-		if description.Description != "" {
+		if categoryDesc.Description != "" {
 			stmt, e := s.stmtUpdateCategoryDescription()
 			if e != nil {
 				return e
@@ -978,18 +978,6 @@ func (s *MySql) DeleteRecords(table, filter string) (int64, error) {
 		return 0, fmt.Errorf("rows affected: %w", err)
 	}
 	return rowsAffected, nil
-}
-
-// Placeholder for the TransLit function
-func (s *MySql) TransLit(input string) string {
-	// Transliteration logic here
-	return input
-}
-
-// Placeholder for the MetaURL function
-func (s *MySql) MetaURL(input string) string {
-	// Meta URL logic here
-	return input
 }
 
 func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
