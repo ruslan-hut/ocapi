@@ -801,9 +801,6 @@ func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.C
 	err = stmt.QueryRow(categoryId, languageId).Scan(
 		&categoryDescription.Name,
 		&categoryDescription.Description,
-		&categoryDescription.MetaTitle,
-		&categoryDescription.MetaDescription,
-		&categoryDescription.MetaKeyword,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

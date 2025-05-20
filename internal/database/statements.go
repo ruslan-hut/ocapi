@@ -53,10 +53,7 @@ func (s *MySql) stmtCategoryDescription() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`SELECT
 					name,
-					description,
-					meta_title,
-					meta_description,
-					meta_keyword
+					description
 				FROM %scategory_description 
 				WHERE category_id=? AND language_id=?
 				LIMIT 1`,
