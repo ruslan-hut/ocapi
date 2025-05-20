@@ -1070,7 +1070,6 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 		&order.MarketingID,
 		&order.Tracking,
 		&order.LanguageID,
-		&order.LanguageCode,
 		&order.CurrencyID,
 		&order.CurrencyCode,
 		&order.CurrencyValue,

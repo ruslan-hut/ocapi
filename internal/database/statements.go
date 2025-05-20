@@ -121,7 +121,6 @@ func (s *MySql) stmtSelectOrder() (*sql.Stmt, error) {
             marketing_id,
             tracking,
             language_id,
-            language_code,
             currency_id,
             currency_code,
             currency_value,

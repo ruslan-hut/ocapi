@@ -55,7 +55,6 @@ type Order struct {
 	MarketingID           int64     `json:"marketing_id"`
 	Tracking              string    `json:"tracking"`
 	LanguageID            int64     `json:"language_id"`
-	LanguageCode          string    `json:"language_code"`
 	CurrencyID            int64     `json:"currency_id"`
 	CurrencyCode          string    `json:"currency_code"`
 	CurrencyValue         float64   `json:"currency_value"`
