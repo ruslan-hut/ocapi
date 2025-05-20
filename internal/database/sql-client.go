@@ -1088,3 +1088,30 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 	}
 	return &order, nil
 }
+
+func (s *MySql) OrderSearchStatus(statusId int64) ([]int64, error) {
+	stmt, err := s.stmtSelectOrderStatus()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := stmt.Query(statusId)
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+	defer rows.Close()
+
+	var orderIds []int64
+	for rows.Next() {
+		var orderId int64
+		if err = rows.Scan(&orderId); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		orderIds = append(orderIds, orderId)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows: %w", err)
+	}
+
+	return orderIds, nil
+}

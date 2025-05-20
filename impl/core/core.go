@@ -20,6 +20,7 @@ type Repository interface {
 	SaveAttributes(attributes []*entity.Attribute) error
 
 	OrderSearchId(orderId int64) (*entity.Order, error)
+	OrderSearchStatus(statusId int64) ([]int64, error)
 
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	DeleteRecords(table, filter string) (int64, error)

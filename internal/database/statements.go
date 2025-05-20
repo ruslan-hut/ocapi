@@ -138,6 +138,18 @@ func (s *MySql) stmtSelectOrder() (*sql.Stmt, error) {
 	return s.prepareStmt("selectOrder", query)
 }
 
+func (s *MySql) stmtSelectOrderStatus() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`SELECT
+			order_id
+		 FROM %sorder
+		 WHERE order_status_id = ?
+		 LIMIT 100`,
+		s.prefix,
+	)
+	return s.prepareStmt("selectOrderStatus", query)
+}
+
 func (s *MySql) stmtUpdateCategoryDescription() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %scategory_description
