@@ -58,7 +58,7 @@ func SearchId(log *slog.Logger, handler Core) http.HandlerFunc {
 func SearchStatus(log *slog.Logger, handler Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mod := sl.Module("http.handlers.order")
-		statusId := chi.URLParam(r, "statusId")
+		statusId := chi.URLParam(r, "orderStatusId")
 
 		logger := log.With(
 			mod,
