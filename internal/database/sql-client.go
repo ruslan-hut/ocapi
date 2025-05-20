@@ -1020,7 +1020,6 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 	var order entity.Order
 	err = stmt.QueryRow(orderId).Scan(
 		&order.OrderID,
-		&order.TransactionID,
 		&order.InvoiceNo,
 		&order.InvoicePrefix,
 		&order.StoreID,

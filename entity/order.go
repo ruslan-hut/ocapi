@@ -5,7 +5,6 @@ import "time"
 // Order represents an order with all its related information.
 type Order struct {
 	OrderID               int64     `json:"order_id"`
-	TransactionID         string    `json:"transaction_id"`
 	InvoiceNo             string    `json:"invoice_no"`
 	InvoicePrefix         string    `json:"invoice_prefix"`
 	StoreID               int64     `json:"store_id"`

@@ -71,7 +71,6 @@ func (s *MySql) stmtSelectOrder() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`SELECT
             order_id,
-            transaction_id,
             invoice_no,
             invoice_prefix,
             store_id,
