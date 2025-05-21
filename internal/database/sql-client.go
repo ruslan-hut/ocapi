@@ -31,7 +31,7 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, fmt.Errorf("sql connect: %w", err)
 	}
 
-	// try ping three times with 30 seconds interval; wait for database to start
+	// try to ping three times with a 30-second interval; wait for a database to start
 	for i := 0; i < 3; i++ {
 		if err = db.Ping(); err == nil {
 			break
@@ -130,6 +130,26 @@ func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescri
 		err = s.upsertProductDescription(productId, productDescData)
 		if err != nil {
 			return fmt.Errorf("product description %s: %v", productDescData.ProductUid, err)
+		}
+	}
+	return nil
+}
+
+func (s *MySql) SaveProductSpecial(products []*entity.ProductSpecial) error {
+	for _, special := range products {
+
+		productId, err := s.getProductByUID(special.ProductUid)
+		if err != nil {
+			return fmt.Errorf("product search: %v", err)
+		}
+
+		if productId == 0 {
+			return fmt.Errorf("product special: uid %s not found", special.ProductUid)
+		}
+
+		err = s.upsertProductSpecial(productId, special)
+		if err != nil {
+			return fmt.Errorf("product special %s: %v", special.ProductUid, err)
 		}
 	}
 	return nil
@@ -343,7 +363,7 @@ func (s *MySql) setProductCategories(productId int64, categories []string) error
 	return nil
 }
 
-// addProductToCategory adds a product to a category with INSERT statement
+// addProductToCategory adds a product to a category with an INSERT statement
 func (s *MySql) addProductToCategory(productId, categoryId int64) error {
 	query := fmt.Sprintf(`INSERT INTO %sproduct_to_category (
                         product_id,
@@ -521,6 +541,75 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 		_, err = s.insert("product_description", userData)
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *MySql) findProductSpecial(productId int64, customerGroupId int64) (bool, error) {
+	stmt, err := s.stmtFindProductSpecial()
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := stmt.Query(productId, customerGroupId)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	return rows.Next(), nil
+}
+
+// upsertProductSpecial creates or updates a product special price record in the database.
+// It first checks if a record exists for the given product ID and customer group ID.
+// If it exists, the function updates the existing record with the new special price data.
+// If it doesn't exist, a new record is inserted.
+//
+// Parameters:
+//   - productId: The ID of the product to which the special price applies
+//   - special: Pointer to the ProductSpecial entity containing price, date range, priority, and customer group data
+//
+// Returns:
+//   - error: Any error that occurred during the database operation, or nil if successful
+func (s *MySql) upsertProductSpecial(productId int64, special *entity.ProductSpecial) error {
+
+	// Check if a record exists
+	exists, err := s.findProductSpecial(productId, special.GroupId)
+	if err != nil {
+		return fmt.Errorf("lookup product special: %v", err)
+	}
+
+	if exists {
+		// Update existing record
+		stmt, err := s.stmtUpdateProductSpecial()
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(
+			special.Price,
+			special.DateStart,
+			special.DateEnd,
+			special.Priority,
+			productId,
+			special.GroupId)
+		if err != nil {
+			return fmt.Errorf("update: %v", err)
+		}
+	} else {
+		// Insert a new record
+		specialData := map[string]interface{}{
+			"product_id":        productId,
+			"customer_group_id": special.GroupId,
+			"price":             special.Price,
+			"date_start":        special.DateStart,
+			"date_end":          special.DateEnd,
+			"priority":          special.Priority,
+		}
+		_, err = s.insert("product_special", specialData)
+		if err != nil {
+			return fmt.Errorf("insert: %v", err)
 		}
 	}
 
@@ -1003,6 +1092,12 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("update batch_uid: %w", err)
 	}
+	// delete records from product_special table with product_id that is not present in product table or have status=0
+	//query = fmt.Sprintf("DELETE FROM %sproduct_special WHERE product_id NOT IN (SELECT product_id FROM %sproduct WHERE status=1)", s.prefix, s.prefix)
+	//_, err = s.db.Exec(query)
+	//if err != nil {
+	//	return 0, fmt.Errorf("delete product_special: %w", err)
+	//}
 	// calculate the number of products that have status=1
 	query = fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE status=1", s.prefix)
 	err = s.db.QueryRow(query).Scan(&count)

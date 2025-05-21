@@ -8,4 +8,5 @@ type Core interface {
 	LoadProductDescriptions(products []*entity.ProductDescription) error
 	LoadProductImages(products []*entity.ProductImage) error
 	LoadProductAttributes(products []*entity.ProductAttribute) error
+	LoadProductSpecial(products []*entity.ProductSpecial) error
 }

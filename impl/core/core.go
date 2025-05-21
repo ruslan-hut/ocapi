@@ -13,6 +13,7 @@ type Repository interface {
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
 	UpdateProductImage(productUid, image string, isMain bool) error
 	SaveProductAttributes(attributes []*entity.ProductAttribute) error
+	SaveProductSpecial(products []*entity.ProductSpecial) error
 
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error

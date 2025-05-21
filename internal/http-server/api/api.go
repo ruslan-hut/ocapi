@@ -65,6 +65,7 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 			r.Post("/description", product.SaveDescription(log, handler))
 			r.Post("/attribute", product.SaveAttribute(log, handler))
 			r.Post("/image", product.SaveImage(log, handler))
+			r.Post("/special", product.SaveSpecial(log, handler))
 		})
 		v1.Route("/attribute", func(r chi.Router) {
 			r.Post("/", attribute.Save(log, handler))

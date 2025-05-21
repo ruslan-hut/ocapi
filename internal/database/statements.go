@@ -266,3 +266,24 @@ func (s *MySql) stmtGetApiUsername() (*sql.Stmt, error) {
 	)
 	return s.prepareStmt("getApiUsername", query)
 }
+
+func (s *MySql) stmtFindProductSpecial() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`SELECT product_special_id FROM %sproduct_special WHERE product_id=? AND customer_group_id=? LIMIT 1`,
+		s.prefix,
+	)
+	return s.prepareStmt("findProductSpecial", query)
+}
+
+func (s *MySql) stmtUpdateProductSpecial() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`UPDATE %sproduct_special SET
+				price = ?, 
+				priority = ?, 
+				date_start = ?,
+				date_end = ?
+			    WHERE product_id = ? AND customer_group_id = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("updateProductSpecial", query)
+}
