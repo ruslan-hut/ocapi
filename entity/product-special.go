@@ -11,8 +11,8 @@ type ProductSpecial struct {
 	GroupId    int64     `json:"group_id" validate:"required,number,gt=0"`
 	Price      float32   `json:"price" validate:"required,number,gt=0"`
 	Priority   int       `json:"priority" validate:"omitempty,number"`
-	DateStart  time.Time `json:"date_start" validate:"omitempty,datetime=2006-01-02T15:04:05"`
-	DateEnd    time.Time `json:"date_end" validate:"omitempty,datetime=2006-01-02T15:04:05"`
+	DateStart  time.Time `json:"date_start" validate:"omitempty,datetime=2006-01-02"`
+	DateEnd    time.Time `json:"date_end" validate:"omitempty,datetime=2006-01-02"`
 }
 
 type ProductSpecialRequest struct {
