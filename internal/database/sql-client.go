@@ -1115,3 +1115,50 @@ func (s *MySql) OrderSearchStatus(statusId int64) ([]int64, error) {
 
 	return orderIds, nil
 }
+
+func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
+	stmt, err := s.stmtSelectOrderProducts()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := stmt.Query(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+	defer rows.Close()
+
+	var products []*entity.ProductOrder
+	for rows.Next() {
+		var product entity.ProductOrder
+		if err = rows.Scan(
+			&product.DiscountAmount,
+			&product.DiscountType,
+			&product.Ean,
+			&product.Isbn,
+			&product.Jan,
+			&product.Location,
+			&product.Model,
+			&product.Mpn,
+			&product.Name,
+			&product.OrderId,
+			&product.Price,
+			&product.ProductId,
+			&product.Quantity,
+			&product.Reward,
+			&product.Sku,
+			&product.Tax,
+			&product.Total,
+			&product.Upc,
+			&product.Weight,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		products = append(products, &product)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows: %w", err)
+	}
+
+	return products, nil
+}

@@ -16,6 +16,7 @@ import (
 type Core interface {
 	OrderSearch(id int64) (*entity.Order, error)
 	OrderSearchStatus(id int64) ([]int64, error)
+	OrderProducts(id int64) ([]*entity.ProductOrder, error)
 }
 
 func SearchId(log *slog.Logger, handler Core) http.HandlerFunc {
@@ -52,6 +53,45 @@ func SearchId(log *slog.Logger, handler Core) http.HandlerFunc {
 		logger.Debug("order id search")
 
 		render.JSON(w, r, response.Ok(order))
+	}
+}
+
+func Products(log *slog.Logger, handler Core) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		mod := sl.Module("http.handlers.order")
+		orderId := chi.URLParam(r, "orderId")
+
+		logger := log.With(
+			mod,
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+			slog.String("orderId", orderId),
+		)
+
+		if handler == nil {
+			logger.Error("order service not available")
+			render.JSON(w, r, response.Error("Order search not available"))
+			return
+		}
+
+		id, err := strconv.ParseInt(orderId, 10, 64)
+		if err != nil {
+			logger.Warn("invalid order id")
+			render.Status(r, 400)
+			render.JSON(w, r, response.Error("Invalid order id"))
+			return
+		}
+
+		data, err := handler.OrderProducts(id)
+		if err != nil {
+			logger.Error("order products", sl.Err(err))
+			render.JSON(w, r, response.Error(fmt.Sprintf("Search failed: %v", err)))
+			return
+		}
+		logger.With(
+			slog.Int("count", len(data)),
+		).Debug("order products")
+
+		render.JSON(w, r, response.Ok(data))
 	}
 }
 

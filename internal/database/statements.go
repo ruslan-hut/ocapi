@@ -150,6 +150,35 @@ func (s *MySql) stmtSelectOrderStatus() (*sql.Stmt, error) {
 	return s.prepareStmt("selectOrderStatus", query)
 }
 
+func (s *MySql) stmtSelectOrderProducts() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`SELECT
+			discount_amount,
+			discount_type,
+			ean,
+			isbn,
+			jan,
+			location,
+			model,
+			mpn,
+			name,
+			order_id,
+			price,
+			product_id,
+			quantity,
+			reward,
+			sku,
+			tax,
+			total,
+			upc,
+			weight
+		 FROM %sorder_product
+		 WHERE order_id = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("selectOrderProducts", query)
+}
+
 func (s *MySql) stmtUpdateCategoryDescription() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %scategory_description
