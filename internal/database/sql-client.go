@@ -589,9 +589,9 @@ func (s *MySql) upsertProductSpecial(productId int64, special *entity.ProductSpe
 		}
 		_, err = stmt.Exec(
 			special.Price,
+			special.Priority,
 			special.DateStart,
 			special.DateEnd,
-			special.Priority,
 			productId,
 			special.GroupId)
 		if err != nil {
