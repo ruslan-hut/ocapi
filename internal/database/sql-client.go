@@ -290,6 +290,27 @@ func (s *MySql) updateProductImage(productUid, image string) error {
 	return nil
 }
 
+func (s *MySql) GetAllImages() ([]string, error) {
+	query := fmt.Sprintf(`SELECT image FROM %sproduct UNION SELECT image FROM %sproduct_image`, s.prefix, s.prefix)
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var images []string
+	for rows.Next() {
+		var image string
+		if err = rows.Scan(
+			&image,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		images = append(images, image)
+	}
+	return images, nil
+}
+
 func (s *MySql) CheckApiKey(key string) (string, error) {
 
 	stmt, err := s.stmtGetApiUsername()

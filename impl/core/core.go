@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"ocapi/entity"
 	"ocapi/internal/lib/sl"
+	"os"
+	"path/filepath"
 )
 
 type Repository interface {
@@ -30,6 +32,7 @@ type Repository interface {
 	CheckApiKey(key string) (string, error)
 
 	FinalizeProductBatch(batchUid string) (int, error)
+	GetAllImages() ([]string, error)
 }
 
 type MessageService interface {
@@ -94,5 +97,54 @@ func (c *Core) FinishBatch(batchUid string) (*entity.BatchResult, error) {
 	}
 	result := entity.NewBatchResult(batchUid, nil)
 	result.Products = productCount
+	count, err := c.checkImageFiles()
+	if err != nil {
+		c.log.Warn("check files", sl.Err(err))
+	}
+	result.DeletedFiles = count
 	return result, nil
+}
+
+func (c *Core) checkImageFiles() (int, error) {
+	if c.repo == nil {
+		return 0, fmt.Errorf("repository not set")
+	}
+
+	images, err := c.repo.GetAllImages()
+	if err != nil {
+		return 0, err
+	}
+	//extract file names from a path
+	validImages := make(map[string]bool)
+	for _, image := range images {
+		validImages[filepath.Base(image)] = true
+	}
+
+	var count int
+	err = filepath.Walk(c.imagePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		// Check if the current file is in the validImages list
+		file := filepath.Base(path)
+		if validImages[file] {
+			return nil
+		}
+
+		// If the file is not in the validImages list, delete it
+		if err = os.Remove(path); err != nil {
+			c.log.Error("removing image", sl.Err(err))
+			return err
+		}
+		c.log.With(slog.String("image", path)).Info("file removed")
+		count++
+
+		return nil
+	})
+
+	return count, err
 }
