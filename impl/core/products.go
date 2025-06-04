@@ -43,7 +43,6 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 	if c.repo == nil {
 		return fmt.Errorf("repository not initialized")
 	}
-	fileExt := ".png"
 
 	for _, product := range products {
 		// Decode base64 image data
@@ -52,7 +51,7 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			return fmt.Errorf("decode base64 %s: %v", product.ProductUid, err)
 		}
 
-		fileName := fmt.Sprintf("%s%s", product.FileUid, fileExt)
+		fileName := fmt.Sprintf("%s%s", product.FileUid, product.FileExt)
 		imagePath := filepath.Join(c.imagePath, fileName)
 
 		// Save image file
@@ -61,7 +60,7 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			return fmt.Errorf("save image %s: %v", product.ProductUid, err)
 		}
 
-		imageUrl := fmt.Sprintf("%s%s%s", c.imageUrl, product.FileUid, fileExt)
+		imageUrl := fmt.Sprintf("%s%s%s", c.imageUrl, product.FileUid, product.FileExt)
 
 		logger := c.log.With(
 			slog.String("product_uid", product.ProductUid),
