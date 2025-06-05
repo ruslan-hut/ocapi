@@ -1266,6 +1266,7 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 			&product.Total,
 			&product.Upc,
 			&product.Weight,
+			&product.ProductUid,
 		); err != nil {
 			return nil, fmt.Errorf("scan: %w", err)
 		}

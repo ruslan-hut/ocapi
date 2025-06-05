@@ -153,28 +153,30 @@ func (s *MySql) stmtSelectOrderStatus() (*sql.Stmt, error) {
 func (s *MySql) stmtSelectOrderProducts() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`SELECT
-			discount_amount,
-			discount_type,
-			ean,
-			isbn,
-			jan,
-			location,
-			model,
-			mpn,
-			name,
-			order_id,
-			price,
-			product_id,
-			quantity,
-			reward,
-			sku,
-			tax,
-			total,
-			upc,
-			weight
-		 FROM %sorder_product
-		 WHERE order_id = ?`,
-		s.prefix,
+			op.discount_amount,
+			op.discount_type,
+			op.ean,
+			op.isbn,
+			op.jan,
+			op.location,
+			op.model,
+			op.mpn,
+			op.name,
+			op.order_id,
+			op.price,
+			op.product_id,
+			op.quantity,
+			op.reward,
+			op.sku,
+			op.tax,
+			op.total,
+			op.upc,
+			op.weight,
+			p.product_uid
+		 FROM %sorder_product op
+		 JOIN %sproduct p ON op.product_id = p.product_id
+		 WHERE op.order_id = ?`,
+		s.prefix, s.prefix,
 	)
 	return s.prepareStmt("selectOrderProducts", query)
 }

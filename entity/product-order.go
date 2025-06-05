@@ -13,6 +13,7 @@ type ProductOrder struct {
 	OrderId        int64   `json:"order_id"`
 	Price          float32 `json:"price"`
 	ProductId      int64   `json:"product_id"`
+	ProductUid     string  `json:"product_uid"`
 	Quantity       float32 `json:"quantity"`
 	Reward         float32 `json:"reward"`
 	Sku            string  `json:"sku"`
