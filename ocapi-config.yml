@@ -2,7 +2,7 @@
 
 env: ${LOG_ENV}
 listen:
-  bind_ip: 0.0.0.0
+  bind_ip: 127.0.0.1
   port: ${LISTEN_PORT}
   key: ${API_KEY}
 sql:
@@ -18,5 +18,5 @@ images:
   path: ${IMAGES_PATH}
   url: ${IMAGES_URL}
 telegram:
-  enabled: true
+  enabled: false
   api_key: ${TELEGRAM_API_KEY}
