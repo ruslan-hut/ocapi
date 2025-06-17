@@ -25,6 +25,7 @@ type Repository interface {
 	OrderSearchId(orderId int64) (*entity.Order, error)
 	OrderSearchStatus(statusId int64) ([]int64, error)
 	OrderProducts(orderId int64) ([]*entity.ProductOrder, error)
+	UpdateOrderStatus(orderId int64, statusId int) error
 
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	DeleteRecords(table, filter string) (int64, error)

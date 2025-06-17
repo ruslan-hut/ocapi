@@ -17,6 +17,7 @@ type Core interface {
 	OrderSearch(id int64) (*entity.Order, error)
 	OrderSearchStatus(id int64) ([]int64, error)
 	OrderProducts(id int64) ([]*entity.ProductOrder, error)
+	OrderSetStatus(id int64, status int) error
 }
 
 func SearchId(log *slog.Logger, handler Core) http.HandlerFunc {
@@ -131,5 +132,44 @@ func SearchStatus(log *slog.Logger, handler Core) http.HandlerFunc {
 		).Debug("order status search")
 
 		render.JSON(w, r, response.Ok(orders))
+	}
+}
+
+func ChangeStatus(log *slog.Logger, handler Core) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		mod := sl.Module("http.handlers.order")
+
+		logger := log.With(
+			mod,
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		if handler == nil {
+			logger.Error("order service not available")
+			render.JSON(w, r, response.Error("Order service not available"))
+			return
+		}
+
+		var request Request
+		if err := render.Bind(r, &request); err != nil {
+			logger.Error("bind request", sl.Err(err))
+			render.Status(r, 400)
+			render.JSON(w, r, response.Error(fmt.Sprintf("Bind request: %v", err)))
+			return
+		}
+		logger = logger.With(
+			slog.Int64("order_id", request.OrderId),
+			slog.Int("status_id", request.OrderStatusId),
+		)
+
+		err := handler.OrderSetStatus(request.OrderId, request.OrderStatusId)
+		if err != nil {
+			logger.Error("set status", sl.Err(err))
+			render.JSON(w, r, response.Error(fmt.Sprintf("Set status failed: %v", err)))
+			return
+		}
+		logger.Debug("order status changed")
+
+		render.JSON(w, r, response.Ok(nil))
 	}
 }

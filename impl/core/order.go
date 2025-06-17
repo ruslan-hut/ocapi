@@ -25,3 +25,10 @@ func (c *Core) OrderProducts(id int64) ([]*entity.ProductOrder, error) {
 	}
 	return c.repo.OrderProducts(id)
 }
+
+func (c *Core) OrderSetStatus(id int64, status int) error {
+	if c.repo == nil {
+		return fmt.Errorf("repository not initialized")
+	}
+	return c.repo.UpdateOrderStatus(id, status)
+}

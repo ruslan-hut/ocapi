@@ -1279,3 +1279,20 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 
 	return products, nil
 }
+
+func (s *MySql) UpdateOrderStatus(orderId int64, statusId int) error {
+	stmt, err := s.stmtUpdateOrderStatus()
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(
+		statusId,
+		time.Now(),
+		orderId)
+	if err != nil {
+		return fmt.Errorf("update: %v", err)
+	}
+
+	return nil
+}

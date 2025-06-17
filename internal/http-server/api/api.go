@@ -77,6 +77,7 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 		v1.Route("/order", func(r chi.Router) {
 			r.Get("/{orderId}", order.SearchId(log, handler))
 			r.Get("/{orderId}/products", order.Products(log, handler))
+			r.Post("/", order.ChangeStatus(log, handler))
 		})
 		v1.Route("/orders", func(r chi.Router) {
 			r.Get("/{orderStatusId}", order.SearchStatus(log, handler))

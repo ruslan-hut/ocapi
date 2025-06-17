@@ -289,3 +289,14 @@ func (s *MySql) stmtUpdateProductSpecial() (*sql.Stmt, error) {
 	)
 	return s.prepareStmt("updateProductSpecial", query)
 }
+
+func (s *MySql) stmtUpdateOrderStatus() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`UPDATE %sorder SET
+				order_status_id = ?,
+			    date_modified = ?
+			    WHERE order_id = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("updateOrderStatus", query)
+}
