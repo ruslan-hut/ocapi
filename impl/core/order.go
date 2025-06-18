@@ -9,7 +9,19 @@ func (c *Core) OrderSearch(id int64) (*entity.Order, error) {
 	if c.repo == nil {
 		return nil, fmt.Errorf("repository not initialized")
 	}
-	return c.repo.OrderSearchId(id)
+	order, err := c.repo.OrderSearchId(id)
+	if err != nil {
+		return nil, err
+	}
+	products, _ := c.repo.OrderProducts(id)
+	if products != nil {
+		order.Products = products
+	}
+	totals, _ := c.repo.OrderTotals(id)
+	if totals != nil {
+		order.Totals = totals
+	}
+	return order, nil
 }
 
 func (c *Core) OrderSearchStatus(id int64) ([]int64, error) {

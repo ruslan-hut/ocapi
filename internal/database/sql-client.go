@@ -1280,6 +1280,37 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 	return products, nil
 }
 
+func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
+	stmt, err := s.stmtSelectOrderTotals()
+	if err != nil {
+		return nil, err
+	}
+	rows, err := stmt.Query(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("query: %w", err)
+	}
+	defer rows.Close()
+
+	var totals []*entity.OrderTotal
+	for rows.Next() {
+		var total entity.OrderTotal
+		if err = rows.Scan(
+			&total.Code,
+			&total.Title,
+			&total.Value,
+		); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		totals = append(totals, &total)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows: %w", err)
+	}
+
+	return totals, nil
+}
+
 func (s *MySql) UpdateOrderStatus(orderId int64, statusId int) error {
 	stmt, err := s.stmtUpdateOrderStatus()
 	if err != nil {

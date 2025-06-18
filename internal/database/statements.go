@@ -181,6 +181,19 @@ func (s *MySql) stmtSelectOrderProducts() (*sql.Stmt, error) {
 	return s.prepareStmt("selectOrderProducts", query)
 }
 
+func (s *MySql) stmtSelectOrderTotals() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`SELECT
+			op.code,
+			op.title,
+			op.value
+		 FROM %sorder_total op
+		 WHERE op.order_id = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("selectOrderTotals", query)
+}
+
 func (s *MySql) stmtUpdateCategoryDescription() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %scategory_description
