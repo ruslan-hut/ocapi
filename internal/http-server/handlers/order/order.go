@@ -157,18 +157,20 @@ func ChangeStatus(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Bind request: %v", err)))
 			return
 		}
-		logger = logger.With(
-			slog.Int64("order_id", request.OrderId),
-			slog.Int("status_id", request.OrderStatusId),
-		)
 
-		err := handler.OrderSetStatus(request.OrderId, request.OrderStatusId)
-		if err != nil {
-			logger.Error("set status", sl.Err(err))
-			render.JSON(w, r, response.Error(fmt.Sprintf("Set status failed: %v", err)))
-			return
+		for _, order := range request.Data {
+			logger = logger.With(
+				slog.Int64("order_id", order.OrderId),
+				slog.Int("order_status_id", order.OrderStatusId),
+			)
+			err := handler.OrderSetStatus(order.OrderId, order.OrderStatusId)
+			if err != nil {
+				logger.Error("set status", sl.Err(err))
+				render.JSON(w, r, response.Error(fmt.Sprintf("Set status failed: %v", err)))
+				return
+			}
+			logger.Debug("order status changed")
 		}
-		logger.Debug("order status changed")
 
 		render.JSON(w, r, response.Ok(nil))
 	}
