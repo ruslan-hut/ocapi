@@ -8,6 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"ocapi/entity"
 	"ocapi/internal/config"
+	"strings"
 	"sync"
 	"time"
 )
@@ -289,6 +290,67 @@ func (s *MySql) updateProductImage(productUid, fileUid, image string) error {
 			}
 		}
 		return err
+	}
+
+	return nil
+}
+
+func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
+	productId, err := s.getProductByUID(productUid)
+	if err != nil {
+		return err
+	}
+
+	if productId == 0 {
+		return fmt.Errorf("no product found: %s", productUid)
+	}
+
+	// Get all file_uid records for this product
+	query := fmt.Sprintf(`SELECT file_uid FROM %sproduct_image WHERE product_id=?`, s.prefix)
+	rows, err := s.db.Query(query, productId)
+	if err != nil {
+		return fmt.Errorf("select: %v", err)
+	}
+	defer rows.Close()
+
+	// Create map of valid images for fast lookup
+	validImages := make(map[string]bool)
+	for _, image := range images {
+		validImages[image] = true
+	}
+
+	// Find file_uid values to delete
+	var toDelete []string
+	for rows.Next() {
+		var fileUid string
+		if err = rows.Scan(&fileUid); err != nil {
+			return fmt.Errorf("scan: %v", err)
+		}
+		if !validImages[fileUid] {
+			toDelete = append(toDelete, fileUid)
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return fmt.Errorf("rows iteration: %v", err)
+	}
+
+	// Delete records if any found
+	if len(toDelete) > 0 {
+		params := make([]interface{}, len(toDelete)+1)
+		params[0] = productId
+		for i, uid := range toDelete {
+			params[i+1] = uid
+		}
+
+		placeholders := "?" + strings.Repeat(",?", len(toDelete)-1)
+		query = fmt.Sprintf(`DELETE FROM %sproduct_image WHERE product_id=? AND file_uid IN (%s)`,
+			s.prefix, placeholders)
+
+		_, err = s.db.Exec(query, params...)
+		if err != nil {
+			return fmt.Errorf("delete: %v", err)
+		}
 	}
 
 	return nil

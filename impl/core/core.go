@@ -14,6 +14,7 @@ type Repository interface {
 	SaveProducts(products []*entity.ProductData) error
 	SaveProductsDescription(productsDescData []*entity.ProductDescription) error
 	UpdateProductImage(productUid, fileUid, image string, isMain bool) error
+	CleanUpProductImages(productUid string, images []string) error
 	SaveProductAttributes(attributes []*entity.ProductAttribute) error
 	SaveProductSpecial(products []*entity.ProductSpecial) error
 

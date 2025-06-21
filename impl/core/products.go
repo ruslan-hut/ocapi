@@ -80,6 +80,15 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 }
 
 func (c *Core) SetProductImages(products []*entity.ProductData) error {
+	if c.repo == nil {
+		return fmt.Errorf("repository not initialized")
+	}
+	for _, product := range products {
+		err := c.repo.CleanUpProductImages(product.Uid, product.Images)
+		if err != nil {
+			return fmt.Errorf("product %s: %v", product.Uid, err)
+		}
+	}
 	return nil
 }
 
