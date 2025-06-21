@@ -300,13 +300,15 @@ func (s *MySql) GetAllImages() ([]string, error) {
 
 	var images []string
 	for rows.Next() {
-		var image string
+		var image sql.NullString
 		if err = rows.Scan(
 			&image,
 		); err != nil {
 			return nil, fmt.Errorf("scan: %w", err)
 		}
-		images = append(images, image)
+		if image.Valid {
+			images = append(images, image.String)
+		}
 	}
 	return images, nil
 }
