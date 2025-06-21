@@ -79,6 +79,10 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 	return nil
 }
 
+func (c *Core) SetProductImages(products []*entity.ProductData) error {
+	return nil
+}
+
 func (c *Core) LoadProductSpecial(products []*entity.ProductSpecial) error {
 	if c.repo == nil {
 		return fmt.Errorf("repository not initialized")
