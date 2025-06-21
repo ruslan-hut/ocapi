@@ -272,7 +272,7 @@ func (s *MySql) updateProductImage(productUid, fileUid, image string) error {
 		return err
 	}
 	var productImageId int
-	err = stmt.QueryRow(productId, image).Scan(
+	err = stmt.QueryRow(productId, fileUid).Scan(
 		&productImageId,
 	)
 	if err != nil {

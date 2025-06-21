@@ -269,7 +269,7 @@ func (s *MySql) stmtUpdateAttribute() (*sql.Stmt, error) {
 
 func (s *MySql) stmtGetProductNotMainImage() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
-		"SELECT product_image_id FROM %sproduct_image WHERE product_id=? AND image=? LIMIT 1",
+		"SELECT product_image_id FROM %sproduct_image WHERE product_id=? AND file_uid=? LIMIT 1",
 		s.prefix,
 	)
 	return s.prepareStmt("getProductNotMainImage", query)
