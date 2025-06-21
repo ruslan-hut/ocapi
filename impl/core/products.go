@@ -68,7 +68,7 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			slog.Bool("is_main", product.IsMain),
 		)
 
-		err = c.repo.UpdateProductImage(product.ProductUid, imageUrl, product.IsMain)
+		err = c.repo.UpdateProductImage(product.ProductUid, product.FileUid, imageUrl, product.IsMain)
 		if err != nil {
 			logger.Error("update product image", sl.Err(err))
 			return fmt.Errorf("product %s: %v", product.ProductUid, err)

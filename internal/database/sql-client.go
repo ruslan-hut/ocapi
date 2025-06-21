@@ -237,11 +237,11 @@ func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribu
 	return nil
 }
 
-func (s *MySql) UpdateProductImage(productUid, image string, isMain bool) error {
+func (s *MySql) UpdateProductImage(productUid, fileUid, image string, isMain bool) error {
 	if isMain {
 		return s.updateMainProductImage(productUid, image)
 	} else {
-		return s.updateProductImage(productUid, image)
+		return s.updateProductImage(productUid, fileUid, image)
 	}
 }
 
@@ -257,7 +257,7 @@ func (s *MySql) updateMainProductImage(productUid, image string) error {
 	return nil
 }
 
-func (s *MySql) updateProductImage(productUid, image string) error {
+func (s *MySql) updateProductImage(productUid, fileUid, image string) error {
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
 		return err
@@ -279,6 +279,7 @@ func (s *MySql) updateProductImage(productUid, image string) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			userData := map[string]interface{}{
 				"product_id": productId,
+				"file_uid":   fileUid,
 				"image":      image,
 			}
 
