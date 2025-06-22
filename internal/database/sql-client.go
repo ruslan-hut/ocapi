@@ -306,13 +306,11 @@ func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
 	}
 
 	// 2) Запрашиваем из БД пары (product_image_id, file_uid)
-	query := fmt.Sprintf(
-		`SELECT product_image_id, file_uid
-         FROM %sproduct_image
-         WHERE product_id = ?`,
-		s.prefix,
-	)
-	rows, err := s.db.Query(query, productId)
+	stmt, err := s.stmtGetProductImages()
+	if err != nil {
+		return err
+	}
+	rows, err := stmt.Query(productId)
 	if err != nil {
 		return fmt.Errorf("select: %v", err)
 	}
