@@ -296,60 +296,84 @@ func (s *MySql) updateProductImage(productUid, fileUid, image string) error {
 }
 
 func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
+	// 1) Получаем ID продукта
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
 		return err
 	}
-
 	if productId == 0 {
 		return fmt.Errorf("no product found: %s", productUid)
 	}
 
-	// Get all file_uid records for this product
-	query := fmt.Sprintf(`SELECT file_uid FROM %sproduct_image WHERE product_id=?`, s.prefix)
+	// 2) Запрашиваем из БД пары (product_image_id, file_uid)
+	query := fmt.Sprintf(
+		`SELECT product_image_id, file_uid
+         FROM %sproduct_image
+         WHERE product_id = ?`,
+		s.prefix,
+	)
 	rows, err := s.db.Query(query, productId)
 	if err != nil {
 		return fmt.Errorf("select: %v", err)
 	}
 	defer rows.Close()
 
-	// Create map of valid images for fast lookup
-	validImages := make(map[string]bool)
-	for _, image := range images {
-		validImages[image] = true
+	// 3) Переводим входной список images в сет для быстрого поиска
+	validImages := make(map[string]bool, len(images))
+	for _, uid := range images {
+		validImages[uid] = true
 	}
 
-	// Find file_uid values to delete
-	var toDelete []string
+	// 4) Проходим по всем записям и решаем, какие product_image_id удалить:
+	//    - если file_uid не в validImages
+	//    - или если это повторный встреченный file_uid (дубликат)
+	seen := make(map[string]bool, len(images))
+	var idsToDelete []int64
+
 	for rows.Next() {
-		var fileUid string
-		if err = rows.Scan(&fileUid); err != nil {
+		var (
+			imgID   int64
+			fileUid string
+		)
+		if err = rows.Scan(&imgID, &fileUid); err != nil {
 			return fmt.Errorf("scan: %v", err)
 		}
+
+		// не в списке актуальных → удаляем
 		if !validImages[fileUid] {
-			toDelete = append(toDelete, fileUid)
+			idsToDelete = append(idsToDelete, imgID)
+			continue
+		}
+		// уже встречали этот file_uid → дубль → удаляем
+		if seen[fileUid] {
+			idsToDelete = append(idsToDelete, imgID)
+		} else {
+			seen[fileUid] = true
 		}
 	}
-
 	if err = rows.Err(); err != nil {
 		return fmt.Errorf("rows iteration: %v", err)
 	}
 
-	// Delete records if any found
-	if len(toDelete) > 0 {
-		params := make([]interface{}, len(toDelete)+1)
-		params[0] = productId
-		for i, uid := range toDelete {
-			params[i+1] = uid
+	// 5) Если есть что удалить — формируем один DELETE по списку product_image_id
+	if len(idsToDelete) > 0 {
+		// Подготавливаем плейсхолдеры и аргументы
+		placeholders := make([]string, len(idsToDelete))
+		args := make([]interface{}, len(idsToDelete))
+		for i, id := range idsToDelete {
+			placeholders[i] = "?"
+			args[i] = id
 		}
 
-		placeholders := "?" + strings.Repeat(",?", len(toDelete)-1)
-		query = fmt.Sprintf(`DELETE FROM %sproduct_image WHERE product_id=? AND file_uid IN (%s)`,
-			s.prefix, placeholders)
+		delQuery := fmt.Sprintf(
+			`DELETE FROM %sproduct_image
+             WHERE product_image_id IN (%s)`,
+			s.prefix,
+			strings.Join(placeholders, ","),
+		)
 
-		_, err = s.db.Exec(query, params...)
-		if err != nil {
-			return fmt.Errorf("delete: %v", err)
+		if _, err = s.db.Exec(delQuery, args...); err != nil {
+			return fmt.Errorf("delete by id: %v", err)
 		}
 	}
 
