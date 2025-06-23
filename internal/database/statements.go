@@ -242,6 +242,8 @@ func (s *MySql) stmtUpdateProduct() (*sql.Stmt, error) {
 				price = ?, 
 				manufacturer_id = ?, 
 				status = ?, 
+				weight = ?,
+                weight_class_id = ?,
 				date_modified = ?,
                 batch_uid = ?
 			    WHERE product_id = ?`,

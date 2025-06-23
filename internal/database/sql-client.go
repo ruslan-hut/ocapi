@@ -435,6 +435,8 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 		productData.Price,
 		manufacturerId,
 		productData.Status(),
+		productData.Weight,
+		productData.WeightClassId,
 		time.Now(),
 		productData.BatchUid,
 		productId)
@@ -507,7 +509,8 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 		"date_available":  time.Now().AddDate(0, 0, -3),
 		"shipping":        1,
 		"tax_class_id":    9,
-		"weight_class_id": 0,
+		"weight":          product.Weight,
+		"weight_class_id": product.WeightClassId,
 		"length_class_id": 0,
 		"date_added":      time.Now(),
 		"date_modified":   time.Now(),
