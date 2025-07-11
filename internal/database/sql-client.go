@@ -1092,18 +1092,18 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	query := fmt.Sprintf(`INSERT INTO %smanufacturer (name) VALUES (?)`, s.prefix)
 	res, err := s.db.Exec(query, name)
 	if err != nil {
-		return 0, fmt.Errorf("insert: %w", err)
+		return 0, err
 	}
 
 	manufacturerId, err = res.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("last insert id: %w", err)
+		return 0, err
 	}
 
 	query = fmt.Sprintf(`INSERT INTO %smanufacturer_to_store (manufacturer_id, store_id) VALUES (?, 0)`, s.prefix)
 	_, err = s.db.Exec(query, manufacturerId)
 	if err != nil {
-		return 0, fmt.Errorf("insert: %w", err)
+		return 0, err
 	}
 
 	return manufacturerId, nil
@@ -1125,7 +1125,7 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, fmt.Errorf("to get columns: %w", err)
+		return nil, err
 	}
 
 	results := make([]map[string]interface{}, 0)
@@ -1137,7 +1137,7 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 		}
 
 		if err = rows.Scan(columnPointers...); err != nil {
-			return nil, fmt.Errorf("scan row: %w", err)
+			return nil, err
 		}
 
 		rowMap := make(map[string]interface{})
@@ -1161,7 +1161,7 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration: %w", err)
+		return nil, err
 	}
 
 	return results, nil
@@ -1174,11 +1174,11 @@ func (s *MySql) DeleteRecords(table, filter string) (int64, error) {
 	}
 	result, err := s.db.Exec(query)
 	if err != nil {
-		return 0, fmt.Errorf("exec: %w", err)
+		return 0, err
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf("rows affected: %w", err)
+		return 0, err
 	}
 	return rowsAffected, nil
 }
@@ -1293,7 +1293,7 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil // no order found
 		}
-		return nil, fmt.Errorf("scan order: %w", err)
+		return nil, err
 	}
 	return &order, nil
 }
@@ -1305,7 +1305,7 @@ func (s *MySql) OrderSearchStatus(statusId int64) ([]int64, error) {
 	}
 	rows, err := stmt.Query(statusId)
 	if err != nil {
-		return nil, fmt.Errorf("query: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -1313,13 +1313,13 @@ func (s *MySql) OrderSearchStatus(statusId int64) ([]int64, error) {
 	for rows.Next() {
 		var orderId int64
 		if err = rows.Scan(&orderId); err != nil {
-			return nil, fmt.Errorf("scan: %w", err)
+			return nil, err
 		}
 		orderIds = append(orderIds, orderId)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows: %w", err)
+		return nil, err
 	}
 
 	return orderIds, nil
@@ -1332,7 +1332,7 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 	}
 	rows, err := stmt.Query(orderId)
 	if err != nil {
-		return nil, fmt.Errorf("query: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -1361,13 +1361,13 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 			&product.Weight,
 			&product.ProductUid,
 		); err != nil {
-			return nil, fmt.Errorf("scan: %w", err)
+			return nil, err
 		}
 		products = append(products, &product)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows: %w", err)
+		return nil, err
 	}
 
 	return products, nil
@@ -1380,7 +1380,7 @@ func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
 	}
 	rows, err := stmt.Query(orderId)
 	if err != nil {
-		return nil, fmt.Errorf("query: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -1392,18 +1392,19 @@ func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
 			&total.Title,
 			&total.Value,
 		); err != nil {
-			return nil, fmt.Errorf("scan: %w", err)
+			return nil, err
 		}
 		totals = append(totals, &total)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows: %w", err)
+		return nil, err
 	}
 
 	return totals, nil
 }
 
+// UpdateOrderStatus updates the current order status only if 'statusId' is less than the current status_id value
 func (s *MySql) UpdateOrderStatus(orderId int64, statusId int) error {
 	stmt, err := s.stmtUpdateOrderStatus()
 	if err != nil {
@@ -1413,9 +1414,11 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int) error {
 	_, err = stmt.Exec(
 		statusId,
 		time.Now(),
-		orderId)
+		orderId,
+		statusId,
+	)
 	if err != nil {
-		return fmt.Errorf("update: %v", err)
+		return err
 	}
 
 	return nil
