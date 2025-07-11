@@ -17,7 +17,7 @@ type Core interface {
 	OrderSearch(id int64) (*entity.Order, error)
 	OrderSearchStatus(id int64) ([]int64, error)
 	OrderProducts(id int64) ([]*entity.ProductOrder, error)
-	OrderSetStatus(id int64, status int) error
+	OrderSetStatus(id int64, status int, comment string) error
 }
 
 func SearchId(log *slog.Logger, handler Core) http.HandlerFunc {
@@ -162,8 +162,9 @@ func ChangeStatus(log *slog.Logger, handler Core) http.HandlerFunc {
 			logger = logger.With(
 				slog.Int64("order_id", order.OrderId),
 				slog.Int("order_status_id", order.OrderStatusId),
+				slog.String("comment", order.Comment),
 			)
-			err := handler.OrderSetStatus(order.OrderId, order.OrderStatusId)
+			err := handler.OrderSetStatus(order.OrderId, order.OrderStatusId, order.Comment)
 			if err != nil {
 				logger.Error("set status", sl.Err(err))
 				render.JSON(w, r, response.Error(fmt.Sprintf("Set status failed: %v", err)))

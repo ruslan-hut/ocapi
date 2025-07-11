@@ -6,8 +6,9 @@ import (
 )
 
 type Data struct {
-	OrderId       int64 `json:"order_id" validate:"required"`
-	OrderStatusId int   `json:"order_status_id" validate:"required"`
+	OrderId       int64  `json:"order_id" validate:"required"`
+	OrderStatusId int    `json:"order_status_id" validate:"required"`
+	Comment       string `json:"comment,omitempty"`
 }
 
 type Request struct {

@@ -1405,13 +1405,13 @@ func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
 }
 
 // UpdateOrderStatus updates the current order status only if 'statusId' is less than the current status_id value
-func (s *MySql) UpdateOrderStatus(orderId int64, statusId int) error {
+func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) error {
 	stmt, err := s.stmtUpdateOrderStatus()
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(
+	res, err := stmt.Exec(
 		statusId,
 		time.Now(),
 		orderId,
@@ -1419,6 +1419,22 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if rows > 0 {
+		// add order history record
+		rec := map[string]interface{}{
+			"order_id":        orderId,
+			"order_status_id": statusId,
+			"notify":          0,
+			"comment":         comment,
+			"date_added":      time.Now(),
+		}
+		_, err = s.insert("order_history", rec)
+		if err != nil {
+			return fmt.Errorf("insert order history: %w", err)
+		}
 	}
 
 	return nil
