@@ -1439,3 +1439,17 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) e
 
 	return nil
 }
+
+func (s *MySql) UpdateCurrencyValue(currencyCode string, value float64) error {
+	stmt, err := s.stmtUpdateCurrencyValue()
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(value, currencyCode)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

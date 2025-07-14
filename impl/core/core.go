@@ -29,6 +29,8 @@ type Repository interface {
 	OrderTotals(orderId int64) ([]*entity.OrderTotal, error)
 	UpdateOrderStatus(orderId int64, statusId int, comment string) error
 
+	UpdateCurrencyValue(currencyCode string, value float64) error
+
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	DeleteRecords(table, filter string) (int64, error)
 	Stats() string
@@ -150,4 +152,15 @@ func (c *Core) checkImageFiles() (int, error) {
 	})
 
 	return count, err
+}
+
+func (c *Core) UpdateCurrency(body *entity.Currency) error {
+	if c.repo == nil {
+		return fmt.Errorf("repository not set")
+	}
+	if body == nil {
+		return fmt.Errorf("currency data is empty")
+	}
+
+	return c.repo.UpdateCurrencyValue(body.Code, body.Rate)
 }

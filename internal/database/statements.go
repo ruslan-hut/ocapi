@@ -325,3 +325,14 @@ func (s *MySql) stmtUpdateOrderStatus() (*sql.Stmt, error) {
 	)
 	return s.prepareStmt("updateOrderStatus", query)
 }
+
+func (s *MySql) stmtUpdateCurrencyValue() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`UPDATE %scurrency SET
+				value = ?,
+			  	date_modified = NOW()
+			    WHERE code = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("updateCurrencyValue", query)
+}
