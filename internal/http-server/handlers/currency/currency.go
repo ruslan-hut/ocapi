@@ -12,7 +12,7 @@ import (
 )
 
 type Core interface {
-	UpdateCurrency(body *entity.Currency) error
+	UpdateRates(data []*entity.Currency) error
 }
 
 func Update(log *slog.Logger, handler Core) http.HandlerFunc {
@@ -30,19 +30,15 @@ func Update(log *slog.Logger, handler Core) http.HandlerFunc {
 			return
 		}
 
-		var body entity.Currency
+		var body entity.CurrencyData
 		if err := render.Bind(r, &body); err != nil {
 			logger.Error("bind request data", sl.Err(err))
 			render.Status(r, 400)
 			render.JSON(w, r, response.Error(fmt.Sprintf("Failed to decode: %v", err)))
 			return
 		}
-		logger = logger.With(
-			slog.String("code", body.Code),
-			slog.Float64("rate", body.Rate),
-		)
 
-		err := handler.UpdateCurrency(&body)
+		err := handler.UpdateRates(body.Data)
 		if err != nil {
 			logger.Error("update currency", sl.Err(err))
 			render.JSON(w, r, response.Error(fmt.Sprintf("Save data failed: %v", err)))

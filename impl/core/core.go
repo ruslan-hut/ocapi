@@ -154,13 +154,20 @@ func (c *Core) checkImageFiles() (int, error) {
 	return count, err
 }
 
-func (c *Core) UpdateCurrency(body *entity.Currency) error {
+func (c *Core) UpdateRates(data []*entity.Currency) error {
 	if c.repo == nil {
 		return fmt.Errorf("repository not set")
 	}
-	if body == nil {
+	if len(data) == 0 {
 		return fmt.Errorf("currency data is empty")
 	}
 
-	return c.repo.UpdateCurrencyValue(body.Code, body.Rate)
+	for _, currency := range data {
+		err := c.repo.UpdateCurrencyValue(currency.Code, currency.Rate)
+		if err != nil {
+			c.log.Error("updating currency rate", sl.Err(err), slog.String("currency", currency.Code))
+			return fmt.Errorf("failed to update currency %s: %w", currency.Code, err)
+		}
+	}
+	return nil
 }

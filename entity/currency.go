@@ -10,6 +10,10 @@ type Currency struct {
 	Rate float64 `json:"rate" validate:"required,min=0.001"`
 }
 
-func (c *Currency) Bind(_ *http.Request) error {
-	return validate.Struct(c)
+type CurrencyData struct {
+	Data []*Currency `json:"data" validate:"required,dive"`
+}
+
+func (cd *CurrencyData) Bind(_ *http.Request) error {
+	return validate.Struct(cd)
 }
