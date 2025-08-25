@@ -8,11 +8,11 @@ import (
 type ProductData struct {
 	Uid           string   `json:"product_uid" validate:"required"`
 	Article       string   `json:"article"`
-	Price         float32  `json:"price"`
+	Price         float64  `json:"price"`
 	Quantity      int      `json:"quantity"`
 	Manufacturer  string   `json:"manufacturer"`
 	Active        bool     `json:"active"`
-	Weight        float32  `json:"weight"`
+	Weight        float64  `json:"weight"`
 	WeightClassId int      `json:"weight_class_id"`
 	Categories    []string `json:"categories"`
 	Attributes    []string `json:"attributes"`

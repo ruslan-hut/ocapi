@@ -2,13 +2,14 @@ package product
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"ocapi/entity"
 	"ocapi/internal/lib/api/response"
 	"ocapi/internal/lib/sl"
+
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 )
 
 func SaveImage(log *slog.Logger, handler Core) http.HandlerFunc {
