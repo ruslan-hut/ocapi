@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"ocapi/entity"
 	"ocapi/internal/config"
 	"strings"
 	"sync"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
 )
 
 type MySql struct {
@@ -1415,7 +1416,6 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) e
 		statusId,
 		time.Now(),
 		orderId,
-		statusId,
 	)
 	if err != nil {
 		return err
