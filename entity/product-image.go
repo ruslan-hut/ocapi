@@ -11,7 +11,7 @@ type ProductImage struct {
 	FileExt    string `json:"file_ext" validate:"required"`
 	IsMain     bool   `json:"is_main"`
 	Version    string `json:"version"`
-	SortOrder  int    `json:"sort_order" validate:"number"`
+	SortOrder  int64  `json:"sort_order" validate:"number"`
 	FileData   string `json:"file_data" validate:"required,base64"`
 }
 
