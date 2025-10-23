@@ -1417,7 +1417,6 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) e
 		statusId,
 		time.Now(),
 		orderId,
-		statusId,
 	)
 	if err != nil {
 		return err
