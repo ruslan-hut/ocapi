@@ -9,14 +9,13 @@ type ProductImageData struct {
 }
 
 func NewFromProductImage(productImage *ProductImage) *ProductImageData {
-	so := productImage.SortOrder
+	so := int(productImage.SortOrder)
 	if so < 0 {
 		so = 0
 	}
 	if so > 255 {
 		so = 255
 	}
-	productImage.SortOrder = so
 	return &ProductImageData{
 		ProductUid: productImage.ProductUid,
 		FileUid:    productImage.FileUid,
