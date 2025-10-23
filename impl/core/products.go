@@ -46,7 +46,7 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 
 	for _, product := range products {
 		// Decode base64 image data
-		imageData, err := base64.StdEncoding.DecodeString(product.FileData)
+		fileData, err := base64.StdEncoding.DecodeString(product.FileData)
 		if err != nil {
 			return fmt.Errorf("decode base64 %s: %v", product.ProductUid, err)
 		}
@@ -55,12 +55,15 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 		imagePath := filepath.Join(c.imagePath, fileName)
 
 		// Save image file
-		err = os.WriteFile(imagePath, imageData, 0644)
+		err = os.WriteFile(imagePath, fileData, 0644)
 		if err != nil {
 			return fmt.Errorf("save image %s: %v", product.ProductUid, err)
 		}
 
 		imageUrl := fmt.Sprintf("%s%s%s", c.imageUrl, product.FileUid, product.FileExt)
+
+		imageData := entity.NewFromProductImage(product)
+		imageData.ImageUrl = imageUrl
 
 		logger := c.log.With(
 			slog.String("product_uid", product.ProductUid),
@@ -68,7 +71,7 @@ func (c *Core) LoadProductImages(products []*entity.ProductImage) error {
 			slog.Bool("is_main", product.IsMain),
 		)
 
-		err = c.repo.UpdateProductImage(product.ProductUid, product.FileUid, imageUrl, product.IsMain)
+		err = c.repo.UpdateProductImage(imageData)
 		if err != nil {
 			logger.Error("update product image", sl.Err(err))
 			return fmt.Errorf("product %s: %v", product.ProductUid, err)

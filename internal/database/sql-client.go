@@ -239,34 +239,34 @@ func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribu
 	return nil
 }
 
-func (s *MySql) UpdateProductImage(productUid, fileUid, image string, isMain bool) error {
-	if isMain {
-		return s.updateMainProductImage(productUid, image)
+func (s *MySql) UpdateProductImage(imageData *entity.ProductImageData) error {
+	if imageData.IsMain {
+		return s.updateMainProductImage(imageData)
 	} else {
-		return s.updateProductImage(productUid, fileUid, image)
+		return s.updateProductImage(imageData)
 	}
 }
 
-func (s *MySql) updateMainProductImage(productUid, image string) error {
+func (s *MySql) updateMainProductImage(imageData *entity.ProductImageData) error {
 	stmt, err := s.stmtUpdateProductImage()
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(image, productUid)
+	_, err = stmt.Exec(imageData.ImageUrl, imageData.ProductUid)
 	if err != nil {
 		return fmt.Errorf("update: %v", err)
 	}
 	return nil
 }
 
-func (s *MySql) updateProductImage(productUid, fileUid, image string) error {
-	productId, err := s.getProductByUID(productUid)
+func (s *MySql) updateProductImage(imageData *entity.ProductImageData) error {
+	productId, err := s.getProductByUID(imageData.ProductUid)
 	if err != nil {
 		return err
 	}
 
 	if productId == 0 {
-		return fmt.Errorf("no product found: %s", productUid)
+		return fmt.Errorf("no product found: %s", imageData.ProductUid)
 	}
 
 	stmt, err := s.stmtGetProductNotMainImage()
@@ -274,15 +274,16 @@ func (s *MySql) updateProductImage(productUid, fileUid, image string) error {
 		return err
 	}
 	var productImageId int
-	err = stmt.QueryRow(productId, fileUid).Scan(
+	err = stmt.QueryRow(productId, imageData.FileUid).Scan(
 		&productImageId,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			userData := map[string]interface{}{
 				"product_id": productId,
-				"file_uid":   fileUid,
-				"image":      image,
+				"file_uid":   imageData.FileUid,
+				"image":      imageData.ImageUrl,
+				"sort_order": imageData.SortOrder,
 			}
 
 			_, err = s.insert("product_image", userData)
@@ -1416,6 +1417,7 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) e
 		statusId,
 		time.Now(),
 		orderId,
+		statusId,
 	)
 	if err != nil {
 		return err
