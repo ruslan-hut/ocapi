@@ -1300,12 +1300,12 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 	return &order, nil
 }
 
-func (s *MySql) OrderSearchStatus(statusId int64) ([]int64, error) {
+func (s *MySql) OrderSearchStatus(statusId int64, from time.Time) ([]int64, error) {
 	stmt, err := s.stmtSelectOrderStatus()
 	if err != nil {
 		return nil, err
 	}
-	rows, err := stmt.Query(statusId)
+	rows, err := stmt.Query(statusId, from)
 	if err != nil {
 		return nil, err
 	}

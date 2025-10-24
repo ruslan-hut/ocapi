@@ -143,7 +143,7 @@ func (s *MySql) stmtSelectOrderStatus() (*sql.Stmt, error) {
 		`SELECT
 			order_id
 		 FROM %sorder
-		 WHERE order_status_id = ?
+		 WHERE order_status_id = ? AND date_added > ?
 		 LIMIT 100`,
 		s.prefix,
 	)

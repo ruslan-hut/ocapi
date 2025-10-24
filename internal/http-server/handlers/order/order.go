@@ -2,20 +2,22 @@ package order
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"ocapi/entity"
 	"ocapi/internal/lib/api/response"
 	"ocapi/internal/lib/sl"
 	"strconv"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 )
 
 type Core interface {
 	OrderSearch(id int64) (*entity.Order, error)
-	OrderSearchStatus(id int64) ([]int64, error)
+	OrderSearchStatus(id int64, from time.Time) ([]int64, error)
 	OrderProducts(id int64) ([]*entity.ProductOrder, error)
 	OrderSetStatus(id int64, status int, comment string) error
 }
@@ -100,11 +102,13 @@ func SearchStatus(log *slog.Logger, handler Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mod := sl.Module("http.handlers.order")
 		statusId := chi.URLParam(r, "orderStatusId")
+		fromDateStr := r.URL.Query().Get("from_date")
 
 		logger := log.With(
 			mod,
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 			slog.String("statusId", statusId),
+			slog.String("from_date", fromDateStr),
 		)
 
 		if handler == nil {
@@ -121,7 +125,21 @@ func SearchStatus(log *slog.Logger, handler Core) http.HandlerFunc {
 			return
 		}
 
-		orders, err := handler.OrderSearchStatus(id)
+		var fromDate time.Time
+		if fromDateStr != "" {
+			fromDate, err = time.Parse(time.RFC3339, fromDateStr)
+			if err != nil {
+				logger.Warn("invalid from_date parameter")
+				render.Status(r, 400)
+				render.JSON(w, r, response.Error("Invalid from_date parameter"))
+				return
+			}
+		} else {
+			// default value - 30 days ago
+			fromDate = time.Now().AddDate(0, 0, -30)
+		}
+
+		orders, err := handler.OrderSearchStatus(id, fromDate)
 		if err != nil {
 			logger.Error("order search", sl.Err(err))
 			render.JSON(w, r, response.Error(fmt.Sprintf("Search failed: %v", err)))

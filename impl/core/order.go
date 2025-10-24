@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"ocapi/entity"
+	"time"
 )
 
 func (c *Core) OrderSearch(id int64) (*entity.Order, error) {
@@ -24,11 +25,11 @@ func (c *Core) OrderSearch(id int64) (*entity.Order, error) {
 	return order, nil
 }
 
-func (c *Core) OrderSearchStatus(id int64) ([]int64, error) {
+func (c *Core) OrderSearchStatus(id int64, from time.Time) ([]int64, error) {
 	if c.repo == nil {
 		return nil, fmt.Errorf("repository not initialized")
 	}
-	return c.repo.OrderSearchStatus(id)
+	return c.repo.OrderSearchStatus(id, from)
 }
 
 func (c *Core) OrderProducts(id int64) ([]*entity.ProductOrder, error) {

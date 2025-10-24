@@ -7,6 +7,7 @@ import (
 	"ocapi/internal/lib/sl"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Repository interface {
@@ -24,7 +25,7 @@ type Repository interface {
 	SaveAttributes(attributes []*entity.Attribute) error
 
 	OrderSearchId(orderId int64) (*entity.Order, error)
-	OrderSearchStatus(statusId int64) ([]int64, error)
+	OrderSearchStatus(statusId int64, from time.Time) ([]int64, error)
 	OrderProducts(orderId int64) ([]*entity.ProductOrder, error)
 	OrderTotals(orderId int64) ([]*entity.OrderTotal, error)
 	UpdateOrderStatus(orderId int64, statusId int, comment string) error
