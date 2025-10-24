@@ -149,4 +149,188 @@ listen:
     }
     ```
 
-### Order Retrieval (Coming Soon)
+### Order Management
+
+#### Get Order by ID
+- Endpoint: `/api/v1/order/{orderId}`
+- Method: `GET`
+- Description: Retrieves a single order with customer, shipping/payment info, products, and totals.
+- Response:
+  ```json
+  {
+    "data": [
+      {
+        "order_id": 10234,
+        "invoice_no": "INV-000123",
+        "invoice_prefix": "INV-",
+        "store_id": 0,
+        "store_name": "Default",
+        "store_url": "https://example.com/",
+        "customer_id": 501,
+        "customer_group_id": 1,
+        "firstname": "Jane",
+        "lastname": "Doe",
+        "email": "jane.doe@example.com",
+        "telephone": "+1-555-1234",
+        "custom_field": "",
+        "payment_firstname": "Jane",
+        "payment_lastname": "Doe",
+        "payment_company": "",
+        "payment_address_1": "123 Main St",
+        "payment_address_2": "Apt 4B",
+        "payment_city": "Springfield",
+        "payment_postcode": "12345",
+        "payment_country": "USA",
+        "payment_country_id": 223,
+        "payment_zone": "IL",
+        "payment_zone_id": 3613,
+        "payment_address_format": "",
+        "payment_custom_field": "",
+        "payment_method": "Credit Card",
+        "payment_code": "cc",
+        "shipping_firstname": "Jane",
+        "shipping_lastname": "Doe",
+        "shipping_company": "",
+        "shipping_address_1": "123 Main St",
+        "shipping_address_2": "Apt 4B",
+        "shipping_city": "Springfield",
+        "shipping_postcode": "12345",
+        "shipping_country": "USA",
+        "shipping_country_id": 223,
+        "shipping_zone": "IL",
+        "shipping_zone_id": 3613,
+        "shipping_address_format": "",
+        "shipping_custom_field": "",
+        "shipping_method": "Flat Shipping Rate",
+        "shipping_code": "flat.flat",
+        "comment": "Please deliver after 6 PM",
+        "total": 149.9,
+        "order_status_id": 2,
+        "affiliate_id": 0,
+        "commission": 0,
+        "marketing_id": 0,
+        "tracking": "",
+        "language_id": 1,
+        "currency_id": 1,
+        "currency_code": "USD",
+        "currency_value": 1,
+        "ip": "203.0.113.10",
+        "forwarded_ip": "",
+        "user_agent": "Mozilla/5.0",
+        "accept_language": "en-US,en;q=0.9",
+        "date_added": "2025-03-01T10:15:30Z",
+        "date_modified": "2025-03-01T12:05:00Z",
+        "products": [
+          {
+            "discount_amount": 0,
+            "discount_type": "",
+            "ean": "",
+            "isbn": "",
+            "jan": "",
+            "location": "",
+            "model": "SKU-001",
+            "mpn": "",
+            "name": "Sample Product A",
+            "order_id": 10234,
+            "price": 49.95,
+            "product_id": 5970,
+            "product_uid": "02bc1ea8-70d3-11ef-b7f7-00155d018000",
+            "quantity": 1,
+            "reward": 0,
+            "sku": "SKU-001",
+            "tax": 0,
+            "total": 49.95,
+            "upc": "",
+            "weight": 0
+          }
+        ],
+        "totals": [
+          { "code": "sub_total", "title": "Sub-Total", "value": "129.90" },
+          { "code": "shipping",  "title": "Flat Shipping Rate", "value": "20.00" },
+          { "code": "total",     "title": "Total", "value": "149.90" }
+        ]
+      }
+    ],
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
+
+#### Get Products of Order
+- Endpoint: `/api/v1/order/{orderId}/products`
+- Method: `GET`
+- Description: Retrieves products belonging to the given order.
+- Response:
+  ```json
+  {
+    "data": [
+      {
+        "discount_amount": 0,
+        "discount_type": "",
+        "ean": "",
+        "isbn": "",
+        "jan": "",
+        "location": "",
+        "model": "SKU-001",
+        "mpn": "",
+        "name": "Sample Product A",
+        "order_id": 10234,
+        "price": 49.95,
+        "product_id": 5970,
+        "product_uid": "02bc1ea8-70d3-11ef-b7f7-00155d018000",
+        "quantity": 1,
+        "reward": 0,
+        "sku": "SKU-001",
+        "tax": 0,
+        "total": 49.95,
+        "upc": "",
+        "weight": 0
+      }
+    ],
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
+
+#### Change Order Status
+- Endpoint: `/api/v1/order`
+- Method: `POST`
+- Description: Sets a new status and optional comment for one or more orders.
+- Request Body:
+  ```json
+  {
+    "data": [
+      {
+        "order_id": 10234,
+        "order_status_id": 5,
+        "comment": "Status updated by OCAPI"
+      }
+    ]
+  }
+  ```
+- Response:
+  ```json
+  {
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
+
+#### Get Orders by Status
+- Endpoint: `/api/v1/orders/{orderStatusId}`
+- Method: `GET`
+- Query Parameters:
+  - `from_date` (optional, RFC3339). If omitted, defaulted to 30 days ago.
+- Description: Returns a list of order IDs that are in the given status and were modified since `from_date`.
+- Response:
+  ```json
+  {
+    "data": [10234, 10235, 10250],
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
