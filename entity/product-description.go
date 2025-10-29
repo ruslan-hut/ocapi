@@ -6,14 +6,15 @@ import (
 )
 
 type ProductDescription struct {
-	ProductUid      string `json:"product_uid" validate:"required"`
-	LanguageId      int64  `json:"language_id,omitempty" validate:"required"`
-	Name            string `json:"name,omitempty"`
-	Description     string `json:"description,omitempty"`
-	MetaTitle       string `json:"meta_title,omitempty"`
-	MetaKeyword     string `json:"meta_keyword,omitempty"`
-	MetaDescription string `json:"meta_description,omitempty"`
-	SeoKeyword      string `json:"seo_keyword,omitempty"`
+	ProductUid        string `json:"product_uid" validate:"required"`
+	LanguageId        int64  `json:"language_id,omitempty" validate:"required"`
+	Name              string `json:"name,omitempty"`
+	Description       string `json:"description,omitempty"`
+	MetaTitle         string `json:"meta_title,omitempty"`
+	MetaKeyword       string `json:"meta_keyword,omitempty"`
+	MetaDescription   string `json:"meta_description,omitempty"`
+	SeoKeyword        string `json:"seo_keyword,omitempty"`
+	UpdateDescription bool   `json:"update_description,omitempty"`
 }
 
 func (p *ProductDescription) Bind(_ *http.Request) error {

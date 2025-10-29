@@ -616,7 +616,7 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 	}
 
 	if desc != nil {
-		if productDescription.Description == "" {
+		if productDescription.Description == "" || !productDescription.UpdateDescription {
 			query = fmt.Sprintf(
 				`UPDATE %sproduct_description SET
 					name = ?
