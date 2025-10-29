@@ -52,11 +52,15 @@ listen:
                 "language_id": 1,
                 "product_uid": "28ac4a2c-6f4c-11ef-b7f7-00155d018000",
                 "name": "Spa candle MUSE, 30 g",
-                "description": "The candle is made of natural soy wax. The aroma of the candle is a combination of the scents of the forest and the sea. The candle is packed in a beautiful gift box."  
+                "description": "The candle is made of natural soy wax. The aroma of the candle is a combination of the scents of the forest and the sea. The candle is packed in a beautiful gift box.",
+                "update_description": "true"  
             }
         ]
     }
   ```
+  If parameter `update_description` is set to `false`, the description will be added only if it doesn't already exist.
+  If the parameter is omitted, it defaults to `false`. If set to `true`, the description will be added or updated if it
+  already exists.
 
 ### Categories. Products Hierarchy
 
