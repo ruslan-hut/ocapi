@@ -7,7 +7,14 @@ import (
 
 type ProductData struct {
 	Uid           string   `json:"product_uid" validate:"required"`
-	Article       string   `json:"article"`
+	Article       string   `json:"article"` // goes to the 'model' field
+	Sku           string   `json:"sku,omitempty" validate:"max=64"`
+	Upc           string   `json:"upc,omitempty" validate:"max=12"`
+	Ean           string   `json:"ean,omitempty" validate:"max=14"`
+	Jan           string   `json:"jan,omitempty" validate:"max=13"`
+	Isbn          string   `json:"isbn,omitempty" validate:"max=17"`
+	Mpn           string   `json:"mpn,omitempty" validate:"max=64"`
+	Location      string   `json:"location,omitempty" validate:"max=128"`
 	Price         float64  `json:"price"`
 	Quantity      int      `json:"quantity"`
 	Manufacturer  string   `json:"manufacturer"`

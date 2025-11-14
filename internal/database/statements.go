@@ -237,6 +237,13 @@ func (s *MySql) stmtUpdateProduct() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %sproduct SET
 				model = ?, 
+                sku = ?,
+                upc = ?,
+                ean = ?,
+                jan = ?,
+				isbn = ?,
+                mpn = ?,
+                location = ?,
 				quantity = ?, 
                 stock_status_id = ?,
 				price = ?, 

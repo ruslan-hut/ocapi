@@ -432,6 +432,13 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 	}
 	_, err = stmt.Exec(
 		productData.Article,
+		productData.Sku,
+		productData.Upc,
+		productData.Ean,
+		productData.Jan,
+		productData.Isbn,
+		productData.Mpn,
+		productData.Location,
 		productData.Quantity,
 		productData.StockStatusID(),
 		productData.Price,
@@ -501,6 +508,13 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 	userData := map[string]interface{}{
 		"product_uid":     product.Uid,
 		"model":           product.Article,
+		"sku":             product.Sku,
+		"upc":             product.Upc,
+		"ean":             product.Ean,
+		"jan":             product.Jan,
+		"isbn":            product.Isbn,
+		"mpn":             product.Mpn,
+		"location":        product.Location,
 		"price":           product.Price,
 		"manufacturer_id": manufacturerId,
 		"quantity":        product.Quantity,
