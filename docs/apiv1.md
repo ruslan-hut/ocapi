@@ -58,9 +58,10 @@ listen:
         ]
     }
   ```
-  If parameter `update_description` is set to `false`, the description will be added only if it doesn't already exist.
-  If the parameter is omitted, it defaults to `false`. If set to `true`, the description will be added or updated if it
-  already exists.
+  The endpoint can receive a parameter `update_description` to control whether the description should be updated or added.
+  If the parameter is set to `false`, the description will be added only if it doesn't already exist.
+  If the parameter is omitted, it defaults to `false`. If set to `true`, the description will be added or updated. 
+  Example of url: `/api/v1/product/description?update_description=true`
 
 ### Categories. Products Hierarchy
 
