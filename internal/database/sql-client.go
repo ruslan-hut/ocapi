@@ -455,9 +455,29 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 
 	err = s.setProductCategories(productId, productData.Categories)
 	if err != nil {
-		return fmt.Errorf("set categories: %v", err)
+		return err
 	}
 
+	err = s.updateCustomFields(productId, productData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *MySql) updateCustomFields(productId int64, productData *entity.ProductData) error {
+	if len(productData.CustomFields) > 0 {
+		for _, field := range productData.CustomFields {
+			data := map[string]interface{}{
+				field.FieldName: field.FieldValue,
+			}
+			err := s.update("product", data, "product_id=?", productId)
+			if err != nil {
+				return fmt.Errorf("update custom field %s: %v", field.FieldName, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -548,6 +568,11 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 	}
 
 	if err = s.addProductToLayout(productId); err != nil {
+		return err
+	}
+
+	err = s.updateCustomFields(productId, product)
+	if err != nil {
 		return err
 	}
 

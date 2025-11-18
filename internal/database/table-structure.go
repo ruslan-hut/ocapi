@@ -178,3 +178,49 @@ func (s *MySql) insert(table string, userData map[string]interface{}) (int64, er
 
 	return rowId, nil
 }
+
+func (s *MySql) update(table string, userData map[string]interface{}, whereClause string, whereArgs ...interface{}) error {
+	// Получаем структуру таблицы
+	tableInfo, err := s.readStructure(table)
+	if err != nil {
+		return err
+	}
+
+	var setParts []string
+	var values []interface{}
+
+	for colName, colInfo := range tableInfo {
+		// Не обновляем AUTO_INCREMENT поля
+		if colInfo.AutoIncrement {
+			continue
+		}
+
+		if userVal, ok := userData[colName]; ok {
+			setParts = append(setParts, fmt.Sprintf("%s = ?", colName))
+			values = append(values, userVal)
+		}
+	}
+
+	if len(setParts) == 0 {
+		return fmt.Errorf("no fields to update %s", table)
+	}
+
+	// Формируем SQL-запрос
+	updateSQL := fmt.Sprintf(
+		"UPDATE %s%s SET %s WHERE %s",
+		s.prefix,
+		table,
+		strings.Join(setParts, ", "),
+		whereClause,
+	)
+
+	// Объединяем значения для SET и WHERE
+	values = append(values, whereArgs...)
+
+	_, err = s.db.Exec(updateSQL, values...)
+	if err != nil {
+		return fmt.Errorf("%s update: %w", table, err)
+	}
+
+	return nil
+}
