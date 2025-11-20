@@ -126,7 +126,7 @@ func (s *MySql) insert(table string, userData map[string]interface{}) (int64, er
 		// Смотрим, есть ли значение для этой колонки в userData
 		if userVal, ok := userData[colName]; ok {
 			// Пользовательская структура содержит данные — вставляем
-			colNames = append(colNames, colName)
+			colNames = append(colNames, fmt.Sprintf("`%s`", colName))
 			placeholders = append(placeholders, "?")
 			values = append(values, userVal)
 		} else {
@@ -141,7 +141,7 @@ func (s *MySql) insert(table string, userData map[string]interface{}) (int64, er
 				continue
 			}
 			// Если мы здесь — поле NOT NULL, без DEFAULT => нужно что-то явно вставить
-			colNames = append(colNames, colName)
+			colNames = append(colNames, fmt.Sprintf("`%s`", colName))
 			placeholders = append(placeholders, "?")
 
 			switch colInfo.DataType {
@@ -159,7 +159,7 @@ func (s *MySql) insert(table string, userData map[string]interface{}) (int64, er
 	}
 	// Формируем сам запрос INSERT
 	insertSQL := fmt.Sprintf(
-		"INSERT INTO %s%s (%s) VALUES (%s)",
+		"INSERT INTO `%s%s` (%s) VALUES (%s)",
 		s.prefix,
 		table,
 		strings.Join(colNames, ", "),
