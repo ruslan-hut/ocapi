@@ -980,8 +980,9 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			categoryId = 0
 			err = nil
+		} else {
+			return 0, err
 		}
-		return 0, err
 	}
 	if categoryId != 0 {
 		return categoryId, nil
