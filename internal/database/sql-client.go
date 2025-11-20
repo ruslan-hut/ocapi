@@ -989,8 +989,9 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	}
 
 	userData := map[string]interface{}{
-		"category_uid": uid,
-		"date_added":   time.Now(),
+		"category_uid":  uid,
+		"date_added":    time.Now(),
+		"date_modified": time.Now(),
 	}
 	categoryId, err = s.insert("category", userData)
 	if err != nil {
