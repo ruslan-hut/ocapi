@@ -601,6 +601,24 @@ func (s *MySql) addProductToStore(productID int64) error {
 	return nil
 }
 
+func (s *MySql) addCategoryToStore(categoryID int64) error {
+	query := fmt.Sprintf(
+		`INSERT INTO %scategory_to_store (
+				category_id,
+				store_id)
+			VALUES (?, ?)`,
+		s.prefix)
+
+	_, err := s.db.Exec(query,
+		categoryID, 0)
+
+	if err != nil {
+		return fmt.Errorf("category to store: %v", err)
+	}
+
+	return nil
+}
+
 func (s *MySql) addProductToLayout(productID int64) error {
 	query := fmt.Sprintf(
 		`INSERT INTO %sproduct_to_layout (
@@ -1013,6 +1031,8 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	_ = s.addCategoryToStore(categoryId)
 
 	return categoryId, nil
 }
