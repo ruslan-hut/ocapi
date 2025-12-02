@@ -316,7 +316,9 @@ func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
 	if err != nil {
 		return fmt.Errorf("select: %v", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	// 3) Переводим входной список images в сет для быстрого поиска
 	validImages := make(map[string]bool, len(images))
@@ -386,7 +388,9 @@ func (s *MySql) GetAllImages() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	var images []string
 	for rows.Next() {
@@ -629,7 +633,9 @@ func (s *MySql) findProductDescription(productId, languageId int64) (*entity.Pro
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	for rows.Next() {
 		var productDesc entity.ProductDescription
@@ -712,7 +718,9 @@ func (s *MySql) findProductSpecial(productId int64, customerGroupId int64) (bool
 	if err != nil {
 		return false, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	return rows.Next(), nil
 }
@@ -816,7 +824,9 @@ func (s *MySql) findAttributeDescription(attributeId, languageId int64) (*entity
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	for rows.Next() {
 		var attributeDesc entity.AttributeDescription
@@ -885,7 +895,9 @@ func (s *MySql) findProductAttribute(productId, attributeId, languageId int64) (
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	for rows.Next() {
 		var productAttribute entity.ProductAttribute
@@ -970,6 +982,10 @@ func (s *MySql) getProductByUID(uid string) (int64, error) {
 }
 
 func (s *MySql) getCategoryByUID(uid string) (int64, error) {
+	if uid == "" {
+		return 0, nil
+	}
+
 	stmt, err := s.stmtCategoryId()
 	if err != nil {
 		return 0, err
@@ -1164,7 +1180,9 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	columns, err := rows.Columns()
 	if err != nil {
@@ -1350,7 +1368,9 @@ func (s *MySql) OrderSearchStatus(statusId int64, from time.Time) ([]int64, erro
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	var orderIds []int64
 	for rows.Next() {
@@ -1377,7 +1397,9 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	var products []*entity.ProductOrder
 	for rows.Next() {
@@ -1425,7 +1447,9 @@ func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 
 	var totals []*entity.OrderTotal
 	for rows.Next() {
