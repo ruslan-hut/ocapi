@@ -2,8 +2,6 @@ package authenticate
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"ocapi/entity"
@@ -12,6 +10,9 @@ import (
 	"ocapi/internal/lib/sl"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 )
 
 type Authenticate interface {
@@ -43,11 +44,16 @@ func New(log *slog.Logger, auth Authenticate) func(next http.Handler) http.Handl
 
 			t1 := time.Now()
 			defer func() {
-				logger.With(
+				logger = logger.With(
 					slog.Int("status", ww.Status()),
 					slog.Int("size", ww.BytesWritten()),
 					slog.Float64("duration", time.Since(t1).Seconds()),
-				).Info("incoming request")
+				)
+				if ww.Status() == 200 {
+					logger.Debug("incoming request")
+				} else {
+					logger.Warn("auth failed")
+				}
 			}()
 
 			token := ""
