@@ -287,14 +287,18 @@ func (s *MySql) updateProductImage(imageData *entity.ProductImageData) error {
 			}
 
 			_, err = s.insert("product_image", userData)
-			if err != nil {
-				return err
-			}
 		}
 		return err
 	}
 
-	return nil
+	// update sort order if the image is already in DB
+	state, err := s.stmtUpdateProductImageAdd()
+	if err != nil {
+		return err
+	}
+	_, err = state.Exec(imageData.SortOrder, productImageId)
+
+	return err
 }
 
 func (s *MySql) CleanUpProductImages(productUid string, images []string) error {

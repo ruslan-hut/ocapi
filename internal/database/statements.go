@@ -264,6 +264,11 @@ func (s *MySql) stmtUpdateProductImage() (*sql.Stmt, error) {
 	return s.prepareStmt("updateProductImage", query)
 }
 
+func (s *MySql) stmtUpdateProductImageAdd() (*sql.Stmt, error) {
+	query := fmt.Sprintf(`UPDATE %sproduct_image SET sort_order = ? WHERE product_image_id = ?`, s.prefix)
+	return s.prepareStmt("updateProductImageAdd", query)
+}
+
 func (s *MySql) stmtUpdateAttribute() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`UPDATE %sattribute SET
