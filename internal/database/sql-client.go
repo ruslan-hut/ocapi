@@ -242,9 +242,8 @@ func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribu
 func (s *MySql) UpdateProductImage(imageData *entity.ProductImageData) error {
 	if imageData.IsMain {
 		return s.updateMainProductImage(imageData)
-	} else {
-		return s.updateProductImage(imageData)
 	}
+	return s.updateProductImage(imageData)
 }
 
 func (s *MySql) updateMainProductImage(imageData *entity.ProductImageData) error {
