@@ -40,6 +40,40 @@ listen:
   }
   ```
 
+#### Custom Fields
+Use the `custom_fields` array to update additional product columns that are not part of the standard request body. This is useful for fields like `sku`, `upc`, `ean`, `jan`, `isbn`, `mpn`, `location`, or any other column in the `product` table.
+
+- **Structure:**
+  ```json
+  {
+    "field_name": "column_name",
+    "field_value": "value"
+  }
+  ```
+
+- **Example:**
+  ```json
+  {
+    "data": [
+        {
+            "product_uid": "28ac4a2c-6f4c-11ef-b7f7-00155d018000",
+            "article": "scMUSE",
+            "quantity": 6,
+            "price": 25,
+            "active": true,
+            "categories": ["29b666d4-bc22-11ee-b7b4-00155d018000"],
+            "custom_fields": [
+                {"field_name": "sku", "field_value": "SKU-12345"},
+                {"field_name": "ean", "field_value": "4006381333931"},
+                {"field_name": "location", "field_value": "Warehouse A"}
+            ]
+        }
+    ]
+  }
+  ```
+
+- **Supported fields:** `sku`, `upc`, `ean`, `jan`, `isbn`, `mpn`, `location`, and any other valid column in the `product` table.
+
 #### Update or Add Product Description
 - **Endpoint:** `/api/v1/product/description`
 - **Method:** `POST`

@@ -63,13 +63,13 @@ On startup, the application automatically adds these columns if they don't exist
 | `product_uid` | x | x | External unique identifier (lookup key) |
 | `batch_uid` | | x | Batch processing marker |
 | `model` | | x | Article/model number |
-| `sku` | | x | Stock keeping unit |
-| `upc` | | x | Universal product code |
-| `ean` | | x | European article number |
-| `jan` | | x | Japanese article number |
-| `isbn` | | x | Book identifier |
-| `mpn` | | x | Manufacturer part number |
-| `location` | | x | Storage location |
+| `sku` | | | Stock keeping unit (use CustomFields) |
+| `upc` | | | Universal product code (use CustomFields) |
+| `ean` | | | European article number (use CustomFields) |
+| `jan` | | | Japanese article number (use CustomFields) |
+| `isbn` | | | Book identifier (use CustomFields) |
+| `mpn` | | | Manufacturer part number (use CustomFields) |
+| `location` | | | Storage location (use CustomFields) |
 | `quantity` | | x | Stock quantity |
 | `stock_status_id` | | x | Stock status reference |
 | `price` | | x | Base price |
