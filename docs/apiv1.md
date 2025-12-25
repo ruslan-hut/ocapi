@@ -118,10 +118,9 @@ Use the `custom_fields` array to update additional product columns that are not 
         ]
     }
   ```
-  The endpoint can receive a parameter `update_description` to control whether the description should be updated or added.
+  The body parameter `update_description` is to control whether the description should be updated or added.
   If the parameter is set to `false`, the description will be added only if it doesn't already exist.
-  If the parameter is omitted, it defaults to `false`. If set to `true`, the description will be added or updated. 
-  Example of url: `/api/v1/product/description?update_description=true`
+  If the parameter is omitted, it defaults to `false`. If set to `true`, the description will be added or updated.
 
 ### Categories. Products Hierarchy
 
