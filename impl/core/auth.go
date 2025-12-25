@@ -33,7 +33,7 @@ func (c *Core) AuthenticateByToken(token string) (*entity.User, error) {
 	}
 
 	// Try config key
-	if c.authKey == token {
+	if c.authKey != "" && c.authKey == token {
 		userName = "internal"
 		c.log.With("username", userName).Debug("user authenticated from config")
 		c.keysMu.Lock()
