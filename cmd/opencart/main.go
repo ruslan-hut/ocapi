@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
+	"net/http"
 	"ocapi/impl/core"
 	"ocapi/internal/config"
 	"ocapi/internal/database"
 	"ocapi/internal/http-server/api"
 	"ocapi/internal/lib/logger"
 	"ocapi/internal/lib/sl"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -69,11 +74,35 @@ func main() {
 	//	handler.SetMessageService(tg)
 	//}
 
-	// *** blocking start with http server ***
-	err = api.New(conf, lg, handler)
+	// Create HTTP server
+	server, err := api.New(conf, lg, handler)
 	if err != nil {
-		lg.Error("server start", sl.Err(err))
+		lg.Error("server create", sl.Err(err))
 		return
 	}
-	lg.Error("service stopped")
+
+	// Setup signal handling for graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	// Start server in goroutine
+	go func() {
+		if err := server.Start(); err != nil && err != http.ErrServerClosed {
+			lg.Error("server error", sl.Err(err))
+		}
+	}()
+
+	// Wait for shutdown signal
+	sig := <-stop
+	lg.Info("received shutdown signal", slog.String("signal", sig.String()))
+
+	// Graceful shutdown with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		lg.Error("server shutdown error", sl.Err(err))
+	}
+
+	lg.Info("service stopped gracefully")
 }

@@ -2,7 +2,9 @@ package core
 
 import (
 	"fmt"
+	"log/slog"
 	"ocapi/entity"
+	"ocapi/internal/lib/sl"
 	"time"
 )
 
@@ -14,14 +16,21 @@ func (c *Core) OrderSearch(id int64) (*entity.Order, error) {
 	if err != nil {
 		return nil, err
 	}
-	products, _ := c.repo.OrderProducts(id)
-	if products != nil {
+
+	products, err := c.repo.OrderProducts(id)
+	if err != nil {
+		c.log.Warn("failed to fetch order products", slog.Int64("order_id", id), sl.Err(err))
+	} else {
 		order.Products = products
 	}
-	totals, _ := c.repo.OrderTotals(id)
-	if totals != nil {
+
+	totals, err := c.repo.OrderTotals(id)
+	if err != nil {
+		c.log.Warn("failed to fetch order totals", slog.Int64("order_id", id), sl.Err(err))
+	} else {
 		order.Totals = totals
 	}
+
 	return order, nil
 }
 

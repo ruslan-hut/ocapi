@@ -7,6 +7,7 @@ import (
 	"ocapi/internal/lib/sl"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -33,7 +34,6 @@ type Repository interface {
 	UpdateCurrencyValue(currencyCode string, value float64) error
 
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
-	DeleteRecords(table, filter string) (int64, error)
 	Stats() string
 	CheckApiKey(key string) (string, error)
 
@@ -45,20 +45,30 @@ type MessageService interface {
 	SendEventMessage(msg *entity.EventMessage) error
 }
 
+// cachedToken stores authentication token with expiration
+type cachedToken struct {
+	username  string
+	expiresAt time.Time
+}
+
+// tokenCacheTTL defines how long tokens are cached (1 hour)
+const tokenCacheTTL = time.Hour
+
 type Core struct {
 	repo      Repository
 	ms        MessageService
 	authKey   string
 	imagePath string
 	imageUrl  string
-	keys      map[string]string
+	keys      map[string]cachedToken
+	keysMu    sync.RWMutex
 	log       *slog.Logger
 }
 
 func New(log *slog.Logger) *Core {
 	return &Core{
 		log:  log.With(sl.Module("core")),
-		keys: make(map[string]string),
+		keys: make(map[string]cachedToken),
 	}
 }
 

@@ -27,11 +27,14 @@ type Config struct {
 	Images struct {
 		Path string `yaml:"path" env-default:""`
 		Url  string `yaml:"url" env-default:""`
-	}
+	} `yaml:"images"`
+	Product struct {
+		CustomFields []string `yaml:"custom_fields"` // additional allowed custom field names
+	} `yaml:"product"`
 	Telegram struct {
 		Enabled bool   `yaml:"enabled" env-default:"false"`
 		ApiKey  string `yaml:"api_key" env-default:""`
-	}
+	} `yaml:"telegram"`
 }
 
 var instance *Config

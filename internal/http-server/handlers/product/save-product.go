@@ -12,6 +12,9 @@ import (
 	"github.com/go-chi/render"
 )
 
+// MaxBatchSize limits the number of products that can be processed in a single request
+const MaxBatchSize = 500
+
 func SaveProduct(log *slog.Logger, handler Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		mod := sl.Module("http.handlers.product")
@@ -40,6 +43,14 @@ func SaveProduct(log *slog.Logger, handler Core) http.HandlerFunc {
 			slog.Int("total", body.Total),
 			slog.Int("size", len(body.Data)),
 		)
+
+		// Validate batch size
+		if len(body.Data) > MaxBatchSize {
+			logger.Warn("batch size exceeds limit", slog.Int("limit", MaxBatchSize))
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, response.Error(fmt.Sprintf("Batch size %d exceeds limit of %d", len(body.Data), MaxBatchSize)))
+			return
+		}
 
 		err := handler.LoadProducts(body.Data)
 		if err != nil {

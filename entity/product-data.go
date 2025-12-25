@@ -7,7 +7,7 @@ import (
 
 type ProductData struct {
 	Uid     string `json:"product_uid" validate:"required"`
-	Article string `json:"article"` // goes to the 'model' field
+	Article string `json:"article" validate:"max=64"` // goes to the 'model' field
 	// use CustomFields to update these values
 	//Sku           string         `json:"sku,omitempty" validate:"max=64"`
 	//Upc           string         `json:"upc,omitempty" validate:"max=12"`
@@ -16,12 +16,12 @@ type ProductData struct {
 	//Isbn          string         `json:"isbn,omitempty" validate:"max=17"`
 	//Mpn           string         `json:"mpn,omitempty" validate:"max=64"`
 	//Location      string         `json:"location,omitempty" validate:"max=128"`
-	Price         float64        `json:"price"`
-	Quantity      int            `json:"quantity"`
+	Price         float64        `json:"price" validate:"min=0"`
+	Quantity      int            `json:"quantity" validate:"min=0"`
 	Manufacturer  string         `json:"manufacturer"`
 	Active        bool           `json:"active"`
-	Weight        float64        `json:"weight"`
-	WeightClassId int            `json:"weight_class_id"`
+	Weight        float64        `json:"weight" validate:"min=0"`
+	WeightClassId int            `json:"weight_class_id" validate:"min=0"`
 	Categories    []string       `json:"categories"`
 	Attributes    []string       `json:"attributes"`
 	Images        []string       `json:"images"`

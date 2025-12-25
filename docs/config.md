@@ -23,4 +23,15 @@ sql:
 images:
   path: /path/to/images/ # Path to the images directory on the server
   url: catalog/product/  # URL to the images directory
+## Product settings
+product:
+  custom_fields:         # Additional allowed custom field names (beyond defaults)
+    - points             # Example: allow updating 'points' column
+    - sort_order         # Example: allow updating 'sort_order' column
 ```
+
+### Custom Fields
+By default, the following product columns can be updated via the `custom_fields` API parameter:
+- `sku`, `upc`, `ean`, `jan`, `isbn`, `mpn`, `location`
+
+To allow additional columns, add them to `product.custom_fields` in the config file.

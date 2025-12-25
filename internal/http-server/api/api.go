@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -13,7 +14,6 @@ import (
 	"ocapi/internal/http-server/handlers/batch"
 	"ocapi/internal/http-server/handlers/category"
 	"ocapi/internal/http-server/handlers/currency"
-	"ocapi/internal/http-server/handlers/delete-records"
 	"ocapi/internal/http-server/handlers/errors"
 	"ocapi/internal/http-server/handlers/fetch"
 	"ocapi/internal/http-server/handlers/order"
@@ -40,12 +40,11 @@ type Handler interface {
 	currency.Core
 	fetch.Core
 	batch.Core
-	delete_records.Core
 }
 
-func New(conf *config.Config, log *slog.Logger, handler Handler) error {
+func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error) {
 
-	server := Server{
+	server := &Server{
 		conf: conf,
 		log:  log.With(sl.Module("api.server")),
 	}
@@ -55,6 +54,14 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Recoverer)
 	router.Use(render.SetContentType(render.ContentTypeJSON))
+
+	// Health check endpoint (no authentication required)
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+
 	router.Use(authenticate.New(log, handler))
 
 	router.NotFound(errors.NotFound(log))
@@ -88,9 +95,6 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 		v1.Route("/fetch", func(r chi.Router) {
 			r.Post("/", fetch.ReadData(log, handler))
 		})
-		v1.Route("/delete", func(r chi.Router) {
-			r.Post("/", delete_records.TableRecords(log, handler))
-		})
 		v1.Route("/batch", func(r chi.Router) {
 			r.Get("/{batchUid}", batch.Result(log, handler))
 		})
@@ -105,13 +109,23 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) error {
 		ErrorLog: httpLog,
 	}
 
-	serverAddress := fmt.Sprintf("%s:%s", conf.Listen.BindIP, conf.Listen.Port)
+	return server, nil
+}
+
+// Start starts the HTTP server (blocking)
+func (s *Server) Start() error {
+	serverAddress := fmt.Sprintf("%s:%s", s.conf.Listen.BindIP, s.conf.Listen.Port)
 	listener, err := net.Listen("tcp", serverAddress)
 	if err != nil {
 		return err
 	}
 
-	server.log.Info("starting api server", slog.String("address", serverAddress))
+	s.log.Info("starting api server", slog.String("address", serverAddress))
+	return s.httpServer.Serve(listener)
+}
 
-	return server.httpServer.Serve(listener)
+// Shutdown gracefully shuts down the server
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.log.Info("shutting down api server")
+	return s.httpServer.Shutdown(ctx)
 }

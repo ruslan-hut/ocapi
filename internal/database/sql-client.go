@@ -15,11 +15,12 @@ import (
 )
 
 type MySql struct {
-	db         *sql.DB
-	prefix     string
-	structure  map[string]map[string]Column
-	statements map[string]*sql.Stmt
-	mu         sync.Mutex
+	db           *sql.DB
+	prefix       string
+	structure    map[string]map[string]Column
+	statements   map[string]*sql.Stmt
+	mu           sync.Mutex
+	customFields map[string]bool // allowed custom field names for products
 }
 
 func NewSQLClient(conf *config.Config) (*MySql, error) {
@@ -48,11 +49,27 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	db.SetMaxIdleConns(10)           // макс. кол-во "неактивных" соединений в пуле
 	db.SetConnMaxLifetime(time.Hour) // время жизни соединения
 
+	// Initialize allowed custom fields with defaults
+	customFields := map[string]bool{
+		"sku":      true,
+		"upc":      true,
+		"ean":      true,
+		"jan":      true,
+		"isbn":     true,
+		"mpn":      true,
+		"location": true,
+	}
+	// Add configured custom fields
+	for _, field := range conf.Product.CustomFields {
+		customFields[field] = true
+	}
+
 	sdb := &MySql{
-		db:         db,
-		prefix:     conf.SQL.Prefix,
-		structure:  make(map[string]map[string]Column),
-		statements: make(map[string]*sql.Stmt),
+		db:           db,
+		prefix:       conf.SQL.Prefix,
+		structure:    make(map[string]map[string]Column),
+		statements:   make(map[string]*sql.Stmt),
+		customFields: customFields,
 	}
 
 	if err = sdb.addColumnIfNotExists("product", "batch_uid", "VARCHAR(64) NOT NULL"); err != nil {
@@ -476,6 +493,10 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 func (s *MySql) updateCustomFields(productId int64, productData *entity.ProductData) error {
 	if len(productData.CustomFields) > 0 {
 		for _, field := range productData.CustomFields {
+			// Validate field name against whitelist (defaults + configured)
+			if !s.customFields[field.FieldName] {
+				return fmt.Errorf("custom field not allowed: %s", field.FieldName)
+			}
 			data := map[string]interface{}{
 				field.FieldName: field.FieldValue,
 			}
@@ -1191,8 +1212,46 @@ func (s *MySql) getManufacturerId(name string) (int64, error) {
 	return manufacturerId, nil
 }
 
+// allowedReadTables defines tables that can be queried via ReadTable
+var allowedReadTables = map[string]bool{
+	"product": true, "product_description": true, "product_image": true,
+	"product_attribute": true, "product_special": true, "product_to_category": true,
+	"category": true, "category_description": true,
+	"order": true, "order_product": true, "order_total": true, "order_history": true,
+	"attribute": true, "attribute_description": true,
+	"manufacturer": true, "currency": true,
+}
+
+// dangerousSQLPatterns contains patterns that indicate SQL injection attempts
+var dangerousSQLPatterns = []string{
+	";", "--", "/*", "*/", "DROP", "DELETE", "UPDATE", "INSERT",
+	"TRUNCATE", "ALTER", "CREATE", "UNION", "EXEC", "EXECUTE",
+	"xp_", "sp_", "0x", "CHAR(", "CONCAT(",
+}
+
+// containsDangerousSQL checks if a filter string contains potential SQL injection patterns
+func containsDangerousSQL(filter string) bool {
+	upper := strings.ToUpper(filter)
+	for _, pattern := range dangerousSQLPatterns {
+		if strings.Contains(upper, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interface{}, error) {
-	query := fmt.Sprintf("SELECT * FROM %s", table)
+	// Validate table name against whitelist
+	if !allowedReadTables[table] {
+		return nil, fmt.Errorf("table not allowed: %s", table)
+	}
+
+	// Block dangerous SQL patterns in filter
+	if filter != "" && containsDangerousSQL(filter) {
+		return nil, fmt.Errorf("invalid filter: contains forbidden pattern")
+	}
+
+	query := fmt.Sprintf("SELECT * FROM %s%s", s.prefix, table)
 	if filter != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, filter)
 	}
@@ -1249,22 +1308,6 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 	}
 
 	return results, nil
-}
-
-func (s *MySql) DeleteRecords(table, filter string) (int64, error) {
-	query := fmt.Sprintf("DELETE FROM %s", table)
-	if filter != "" {
-		query = fmt.Sprintf("%s WHERE %s", query, filter)
-	}
-	result, err := s.db.Exec(query)
-	if err != nil {
-		return 0, err
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-	return rowsAffected, nil
 }
 
 func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {

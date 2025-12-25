@@ -20,3 +20,6 @@ images:
 telegram:
   enabled: false
   api_key: ${TELEGRAM_API_KEY}
+product:
+  custom_fields:
+    - is_new

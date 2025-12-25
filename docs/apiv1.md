@@ -2,13 +2,38 @@
 
 ### Authentication
 To make requests to the API, you need to provide Bearer token in the `Authorization` header.
-OCAPI supports two ways of token storage: in the configuration file, `listen` section, and in the OpenCart API section inside the admin panel.
+
+```
+Authorization: Bearer your-api-key
+```
+
+OCAPI supports two ways of token storage:
+1. **Configuration file** - in the `listen.key` field
+2. **OpenCart database** - in the `oc_api` table (managed via OpenCart admin panel)
+
 ```yaml
 listen:
   bind_ip: 127.0.0.1
   port: 9800
   key: api-key        # API key for the OCAPI service
 ```
+
+**Token Caching:**
+- Validated tokens are cached for 1 hour to reduce database lookups
+- If a token is revoked in the database, it may remain valid for up to 1 hour
+- Server restart clears the token cache
+
+**Unauthenticated Endpoints:**
+- `GET /health` - Health check endpoint (no authentication required)
+
+### Health Check
+- **Endpoint:** `/health`
+- **Method:** `GET`
+- **Description:** Returns service health status. Does not require authentication.
+- **Response:**
+  ```json
+  {"status":"ok"}
+  ```
 
 ### Product Management
 
@@ -72,7 +97,8 @@ Use the `custom_fields` array to update additional product columns that are not 
   }
   ```
 
-- **Supported fields:** `sku`, `upc`, `ean`, `jan`, `isbn`, `mpn`, `location`, and any other valid column in the `product` table.
+- **Default fields:** `sku`, `upc`, `ean`, `jan`, `isbn`, `mpn`, `location`
+- **Additional fields:** Can be configured in `config.yml` under `product.custom_fields`
 
 #### Update or Add Product Description
 - **Endpoint:** `/api/v1/product/description`
