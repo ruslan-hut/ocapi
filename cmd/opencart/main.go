@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log/slog"
 	"net/http"
@@ -90,7 +91,7 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		if err := server.Start(); err != nil && err != http.ErrServerClosed {
+		if err := server.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			lg.Error("server error", sl.Err(err))
 			serverErr <- err
 		}
