@@ -85,16 +85,25 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
+	// Channel to signal server startup failure
+	serverErr := make(chan error, 1)
+
 	// Start server in goroutine
 	go func() {
 		if err := server.Start(); err != nil && err != http.ErrServerClosed {
 			lg.Error("server error", sl.Err(err))
+			serverErr <- err
 		}
 	}()
 
-	// Wait for shutdown signal
-	sig := <-stop
-	lg.Info("received shutdown signal", slog.String("signal", sig.String()))
+	// Wait for shutdown signal or server error
+	select {
+	case sig := <-stop:
+		lg.Info("received shutdown signal", slog.String("signal", sig.String()))
+	case err := <-serverErr:
+		lg.Error("server failed to start", sl.Err(err))
+		return
+	}
 
 	// Graceful shutdown with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

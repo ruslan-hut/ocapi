@@ -62,44 +62,46 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	router.Use(authenticate.New(log, handler))
-
 	router.NotFound(errors.NotFound(log))
 	router.MethodNotAllowed(errors.NotAllowed(log))
 
-	router.Route("/api/v1", func(v1 chi.Router) {
-		v1.Route("/product", func(r chi.Router) {
-			r.Get("/{uid}", product.UidSearch(log, handler))
-			r.Post("/", product.SaveProduct(log, handler))
-			r.Post("/description", product.SaveDescription(log, handler))
-			r.Post("/attribute", product.SaveAttribute(log, handler))
-			r.Post("/image", product.SaveImage(log, handler))
-			r.Post("/images", product.SetImages(log, handler))
-			r.Post("/special", product.SaveSpecial(log, handler))
-		})
-		v1.Route("/attribute", func(r chi.Router) {
-			r.Post("/", attribute.Save(log, handler))
-		})
-		v1.Route("/category", func(r chi.Router) {
-			r.Post("/", category.SaveCategory(log, handler))
-			r.Post("/description", category.SaveDescription(log, handler))
-		})
-		v1.Route("/order", func(r chi.Router) {
-			r.Get("/{orderId}", order.SearchId(log, handler))
-			r.Get("/{orderId}/products", order.Products(log, handler))
-			r.Post("/", order.ChangeStatus(log, handler))
-		})
-		v1.Route("/orders", func(r chi.Router) {
-			r.Get("/{orderStatusId}", order.SearchStatus(log, handler))
-		})
-		v1.Route("/fetch", func(r chi.Router) {
-			r.Post("/", fetch.ReadData(log, handler))
-		})
-		v1.Route("/batch", func(r chi.Router) {
-			r.Get("/{batchUid}", batch.Result(log, handler))
-		})
-		v1.Route("/currency", func(r chi.Router) {
-			r.Post("/", currency.Update(log, handler))
+	// Authenticated routes
+	router.Group(func(r chi.Router) {
+		r.Use(authenticate.New(log, handler))
+		r.Route("/api/v1", func(v1 chi.Router) {
+			v1.Route("/product", func(r chi.Router) {
+				r.Get("/{uid}", product.UidSearch(log, handler))
+				r.Post("/", product.SaveProduct(log, handler))
+				r.Post("/description", product.SaveDescription(log, handler))
+				r.Post("/attribute", product.SaveAttribute(log, handler))
+				r.Post("/image", product.SaveImage(log, handler))
+				r.Post("/images", product.SetImages(log, handler))
+				r.Post("/special", product.SaveSpecial(log, handler))
+			})
+			v1.Route("/attribute", func(r chi.Router) {
+				r.Post("/", attribute.Save(log, handler))
+			})
+			v1.Route("/category", func(r chi.Router) {
+				r.Post("/", category.SaveCategory(log, handler))
+				r.Post("/description", category.SaveDescription(log, handler))
+			})
+			v1.Route("/order", func(r chi.Router) {
+				r.Get("/{orderId}", order.SearchId(log, handler))
+				r.Get("/{orderId}/products", order.Products(log, handler))
+				r.Post("/", order.ChangeStatus(log, handler))
+			})
+			v1.Route("/orders", func(r chi.Router) {
+				r.Get("/{orderStatusId}", order.SearchStatus(log, handler))
+			})
+			v1.Route("/fetch", func(r chi.Router) {
+				r.Post("/", fetch.ReadData(log, handler))
+			})
+			v1.Route("/batch", func(r chi.Router) {
+				r.Get("/{batchUid}", batch.Result(log, handler))
+			})
+			v1.Route("/currency", func(r chi.Router) {
+				r.Post("/", currency.Update(log, handler))
+			})
 		})
 	})
 
