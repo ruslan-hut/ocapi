@@ -1241,8 +1241,14 @@ func containsDangerousSQL(filter string) bool {
 }
 
 func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interface{}, error) {
+	// Strip prefix if provided (e.g., "oc_product" -> "product")
+	tableName := table
+	if s.prefix != "" && strings.HasPrefix(table, s.prefix) {
+		tableName = strings.TrimPrefix(table, s.prefix)
+	}
+
 	// Validate table name against whitelist
-	if !allowedReadTables[table] {
+	if !allowedReadTables[tableName] {
 		return nil, fmt.Errorf("table not allowed: %s", table)
 	}
 
@@ -1251,7 +1257,7 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 		return nil, fmt.Errorf("invalid filter: contains forbidden pattern")
 	}
 
-	query := fmt.Sprintf("SELECT * FROM %s%s", s.prefix, table)
+	query := fmt.Sprintf("SELECT * FROM %s%s", s.prefix, tableName)
 	if filter != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, filter)
 	}
