@@ -23,6 +23,8 @@ type MySql struct {
 	customFields map[string]bool // allowed custom field names for products
 }
 
+// NewSQLClient creates a new MySQL client, establishes the connection, configures the pool,
+// and ensures that all required custom columns exist in the OpenCart database schema.
 func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if !conf.SQL.Enabled {
 		return nil, nil
@@ -45,9 +47,9 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		time.Sleep(30 * time.Second)
 	}
 
-	db.SetMaxOpenConns(50)           // макс. кол-во открытых соединений
-	db.SetMaxIdleConns(10)           // макс. кол-во "неактивных" соединений в пуле
-	db.SetConnMaxLifetime(time.Hour) // время жизни соединения
+	db.SetMaxOpenConns(50)           // max number of open connections
+	db.SetMaxIdleConns(10)           // max number of idle connections in the pool
+	db.SetConnMaxLifetime(time.Hour) // connection max lifetime
 
 	// Initialize allowed custom fields with defaults
 	customFields := map[string]bool{
@@ -94,11 +96,13 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	return sdb, nil
 }
 
+// Close closes all prepared statements and the database connection.
 func (s *MySql) Close() {
 	s.closeStmt()
 	_ = s.db.Close()
 }
 
+// Stats returns a formatted string with current database connection pool statistics.
 func (s *MySql) Stats() string {
 	stats := s.db.Stats()
 	return fmt.Sprintf("open: %d, inuse: %d, idle: %d, stmts: %d, structure: %d",
@@ -109,6 +113,7 @@ func (s *MySql) Stats() string {
 		len(s.structure))
 }
 
+// ProductSearch returns all product table columns for a product identified by its UID.
 func (s *MySql) ProductSearch(uid string) (interface{}, error) {
 	return s.ReadTable(
 		fmt.Sprintf("%sproduct", s.prefix),
@@ -117,6 +122,7 @@ func (s *MySql) ProductSearch(uid string) (interface{}, error) {
 		false)
 }
 
+// SaveProducts upserts a batch of products: creates new ones or updates existing by UID.
 func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
 	for _, productData := range productsData {
 		productId, err := s.getProductByUID(productData.Uid)
@@ -137,6 +143,7 @@ func (s *MySql) SaveProducts(productsData []*entity.ProductData) error {
 	return nil
 }
 
+// SaveProductsDescription upserts descriptions for a batch of products identified by UID.
 func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescription) error {
 	for _, productDescData := range productsDescData {
 
@@ -157,6 +164,7 @@ func (s *MySql) SaveProductsDescription(productsDescData []*entity.ProductDescri
 	return nil
 }
 
+// SaveProductSpecial upserts special price records for a batch of products.
 func (s *MySql) SaveProductSpecial(products []*entity.ProductSpecial) error {
 	for _, special := range products {
 
@@ -177,6 +185,7 @@ func (s *MySql) SaveProductSpecial(products []*entity.ProductSpecial) error {
 	return nil
 }
 
+// SaveCategories upserts a batch of categories, resolving parent UIDs to IDs.
 func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 	for _, categoryData := range categoriesData {
 		categoryId, err := s.getCategoryByUID(categoryData.CategoryUID)
@@ -201,6 +210,7 @@ func (s *MySql) SaveCategories(categoriesData []*entity.CategoryData) error {
 	return nil
 }
 
+// SaveCategoriesDescription upserts descriptions for a batch of categories.
 func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error {
 	for _, categoryDescData := range categoriesDescData {
 		categoryId, err := s.getCategoryByUID(categoryDescData.CategoryUid)
@@ -218,6 +228,7 @@ func (s *MySql) SaveCategoriesDescription(categoriesDescData []*entity.CategoryD
 	return nil
 }
 
+// SaveAttributes upserts a batch of attributes and their descriptions.
 func (s *MySql) SaveAttributes(attributes []*entity.Attribute) error {
 	for _, attribute := range attributes {
 		attributeId, err := s.getAttributeByUID(attribute.Uid)
@@ -244,6 +255,7 @@ func (s *MySql) SaveAttributes(attributes []*entity.Attribute) error {
 	return nil
 }
 
+// SaveProductAttributes upserts attribute values for a batch of product-attribute pairs.
 func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribute) error {
 	for _, productAttribute := range productAttributes {
 
@@ -256,6 +268,7 @@ func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribu
 	return nil
 }
 
+// UpdateProductImage routes the image update to either the main product image or an additional image handler.
 func (s *MySql) UpdateProductImage(imageData *entity.ProductImageData) error {
 	if imageData.IsMain {
 		return s.updateMainProductImage(imageData)
@@ -263,6 +276,7 @@ func (s *MySql) UpdateProductImage(imageData *entity.ProductImageData) error {
 	return s.updateProductImage(imageData)
 }
 
+// updateMainProductImage sets the main image URL on the product record.
 func (s *MySql) updateMainProductImage(imageData *entity.ProductImageData) error {
 	stmt, err := s.stmtUpdateProductImage()
 	if err != nil {
@@ -275,6 +289,8 @@ func (s *MySql) updateMainProductImage(imageData *entity.ProductImageData) error
 	return nil
 }
 
+// updateProductImage inserts or updates an additional (non-main) product image in the product_image table.
+// If the image with the given file_uid does not exist, it inserts a new row; otherwise updates sort_order.
 func (s *MySql) updateProductImage(imageData *entity.ProductImageData) error {
 	productId, err := s.getProductByUID(imageData.ProductUid)
 	if err != nil {
@@ -317,38 +333,41 @@ func (s *MySql) updateProductImage(imageData *entity.ProductImageData) error {
 	return err
 }
 
-func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
-	// 1) Получаем ID продукта
+// CleanUpProductImages removes additional product images that are not present in the provided list.
+// It also deduplicates images with the same file_uid. Returns a set of file UIDs that already
+// exist in the database (and were kept), so the caller can determine which UIDs are new.
+func (s *MySql) CleanUpProductImages(productUid string, images []string) (map[string]bool, error) {
+	// 1) Get the product ID by UID
 	productId, err := s.getProductByUID(productUid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if productId == 0 {
-		return fmt.Errorf("no product found: %s", productUid)
+		return nil, fmt.Errorf("no product found: %s", productUid)
 	}
 
-	// 2) Запрашиваем из БД пары (product_image_id, file_uid)
+	// 2) Query existing (product_image_id, file_uid) pairs from the database
 	stmt, err := s.stmtGetProductImages()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	rows, err := stmt.Query(productId)
 	if err != nil {
-		return fmt.Errorf("select: %v", err)
+		return nil, fmt.Errorf("select: %v", err)
 	}
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
 	}(rows)
 
-	// 3) Переводим входной список images в сет для быстрого поиска
+	// 3) Build a set from the input image list for fast lookup
 	validImages := make(map[string]bool, len(images))
 	for _, uid := range images {
 		validImages[uid] = true
 	}
 
-	// 4) Проходим по всем записям и решаем, какие product_image_id удалить:
-	//    - если file_uid не в validImages
-	//    - или если это повторный встреченный file_uid (дубликат)
+	// 4) Iterate over existing rows and decide which product_image_id to delete:
+	//    - if file_uid is not in validImages
+	//    - or if the file_uid was already seen (duplicate)
 	seen := make(map[string]bool, len(images))
 	var idsToDelete []int64
 
@@ -358,15 +377,15 @@ func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
 			fileUid string
 		)
 		if err = rows.Scan(&imgID, &fileUid); err != nil {
-			return fmt.Errorf("scan: %v", err)
+			return nil, fmt.Errorf("scan: %v", err)
 		}
 
-		// не в списке актуальных → удаляем
+		// not in the valid list — mark for deletion
 		if !validImages[fileUid] {
 			idsToDelete = append(idsToDelete, imgID)
 			continue
 		}
-		// уже встречали этот file_uid → дубль → удаляем
+		// already seen this file_uid — duplicate — mark for deletion
 		if seen[fileUid] {
 			idsToDelete = append(idsToDelete, imgID)
 		} else {
@@ -374,12 +393,11 @@ func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
 		}
 	}
 	if err = rows.Err(); err != nil {
-		return fmt.Errorf("rows iteration: %v", err)
+		return nil, fmt.Errorf("rows iteration: %v", err)
 	}
 
-	// 5) Если есть что удалить — формируем один DELETE по списку product_image_id
+	// 5) If there are rows to delete, execute a single batch DELETE by product_image_id
 	if len(idsToDelete) > 0 {
-		// Подготавливаем плейсхолдеры и аргументы
 		placeholders := make([]string, len(idsToDelete))
 		args := make([]interface{}, len(idsToDelete))
 		for i, id := range idsToDelete {
@@ -395,13 +413,35 @@ func (s *MySql) CleanUpProductImages(productUid string, images []string) error {
 		)
 
 		if _, err = s.db.Exec(delQuery, args...); err != nil {
-			return fmt.Errorf("delete by id: %v", err)
+			return nil, fmt.Errorf("delete by id: %v", err)
 		}
 	}
 
-	return nil
+	return seen, nil
 }
 
+// InsertProductImage adds a new additional image row into the product_image table for the given product.
+func (s *MySql) InsertProductImage(productUid string, fileUid string, imageUrl string, sortOrder int) error {
+	productId, err := s.getProductByUID(productUid)
+	if err != nil {
+		return err
+	}
+	if productId == 0 {
+		return fmt.Errorf("no product found: %s", productUid)
+	}
+
+	userData := map[string]interface{}{
+		"product_id": productId,
+		"file_uid":   fileUid,
+		"image":      imageUrl,
+		"sort_order": sortOrder,
+	}
+
+	_, err = s.insert("product_image", userData)
+	return err
+}
+
+// GetAllImages returns all image paths from the product and product_image tables (used for orphan cleanup).
 func (s *MySql) GetAllImages() ([]string, error) {
 	query := fmt.Sprintf(`SELECT image FROM %sproduct UNION SELECT image FROM %sproduct_image`, s.prefix, s.prefix)
 	rows, err := s.db.Query(query)
@@ -427,6 +467,7 @@ func (s *MySql) GetAllImages() ([]string, error) {
 	return images, nil
 }
 
+// CheckApiKey looks up an API key in the database and returns the associated username.
 func (s *MySql) CheckApiKey(key string) (string, error) {
 
 	stmt, err := s.stmtGetApiUsername()
@@ -444,6 +485,7 @@ func (s *MySql) CheckApiKey(key string) (string, error) {
 	return userName, nil
 }
 
+// updateProduct updates an existing product record, its category links, and custom fields.
 func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) error {
 	manufacturerId, err := s.getManufacturerId(productData.Manufacturer)
 	if err != nil {
@@ -490,6 +532,7 @@ func (s *MySql) updateProduct(productId int64, productData *entity.ProductData) 
 	return nil
 }
 
+// updateCustomFields applies whitelisted custom field updates to a product record.
 func (s *MySql) updateCustomFields(productId int64, productData *entity.ProductData) error {
 	if len(productData.CustomFields) > 0 {
 		for _, field := range productData.CustomFields {
@@ -509,6 +552,7 @@ func (s *MySql) updateCustomFields(productId int64, productData *entity.ProductD
 	return nil
 }
 
+// setProductCategories replaces all category associations for a product with the given category UIDs.
 func (s *MySql) setProductCategories(productId int64, categories []string) error {
 	if len(categories) == 0 {
 		return nil
@@ -546,13 +590,13 @@ func (s *MySql) addProductToCategory(productId, categoryId int64) error {
 	return nil
 }
 
+// addProduct inserts a new product record along with its store, layout, category, and custom field associations.
 func (s *MySql) addProduct(product *entity.ProductData) error {
 	manufacturerId, err := s.getManufacturerId(product.Manufacturer)
 	if err != nil {
 		return fmt.Errorf("manufacturer search: %v", err)
 	}
 
-	// known columns
 	userData := map[string]interface{}{
 		"product_uid": product.Uid,
 		"model":       product.Article,
@@ -607,6 +651,7 @@ func (s *MySql) addProduct(product *entity.ProductData) error {
 	return nil
 }
 
+// addProductToStore links a product to the default store (store_id=0).
 func (s *MySql) addProductToStore(productID int64) error {
 	query := fmt.Sprintf(
 		`INSERT INTO %sproduct_to_store (
@@ -625,6 +670,7 @@ func (s *MySql) addProductToStore(productID int64) error {
 	return nil
 }
 
+// addCategoryToStore links a category to the default store (store_id=0).
 func (s *MySql) addCategoryToStore(categoryID int64) error {
 	query := fmt.Sprintf(
 		`INSERT INTO %scategory_to_store (
@@ -643,6 +689,7 @@ func (s *MySql) addCategoryToStore(categoryID int64) error {
 	return nil
 }
 
+// addProductToLayout links a product to the default layout (store_id=0, layout_id=0).
 func (s *MySql) addProductToLayout(productID int64) error {
 	query := fmt.Sprintf(
 		`INSERT INTO %sproduct_to_layout (
@@ -662,6 +709,7 @@ func (s *MySql) addProductToLayout(productID int64) error {
 	return nil
 }
 
+// findProductDescription looks up a product description by product ID and language ID. Returns nil if not found.
 func (s *MySql) findProductDescription(productId, languageId int64) (*entity.ProductDescription, error) {
 	query := fmt.Sprintf(
 		`SELECT
@@ -693,6 +741,8 @@ func (s *MySql) findProductDescription(productId, languageId int64) (*entity.Pro
 	return nil, nil
 }
 
+// upsertProductDescription creates or updates a product description for the given product and language.
+// If the description exists and UpdateDescription is false, only the name is updated.
 func (s *MySql) upsertProductDescription(productId int64, productDescription *entity.ProductDescription) error {
 	var query string
 	var err error
@@ -750,6 +800,7 @@ func (s *MySql) upsertProductDescription(productId int64, productDescription *en
 	return nil
 }
 
+// findProductSpecial checks whether a special price record exists for the given product and customer group.
 func (s *MySql) findProductSpecial(productId int64, customerGroupId int64) (bool, error) {
 	stmt, err := s.stmtFindProductSpecial()
 	if err != nil {
@@ -821,6 +872,7 @@ func (s *MySql) upsertProductSpecial(productId int64, special *entity.ProductSpe
 	return nil
 }
 
+// addAttribute inserts a new attribute record and returns its auto-generated ID.
 func (s *MySql) addAttribute(attribute *entity.Attribute) (int64, error) {
 	userData := map[string]interface{}{
 		"attribute_uid":      attribute.Uid,
@@ -836,6 +888,7 @@ func (s *MySql) addAttribute(attribute *entity.Attribute) (int64, error) {
 	return attributeId, nil
 }
 
+// updateAttribute updates an existing attribute's UID, group ID, and sort order.
 func (s *MySql) updateAttribute(attributeId int64, attribute *entity.Attribute) error {
 
 	stmt, err := s.stmtUpdateAttribute()
@@ -854,6 +907,7 @@ func (s *MySql) updateAttribute(attributeId int64, attribute *entity.Attribute) 
 	return nil
 }
 
+// findAttributeDescription looks up an attribute description by attribute ID and language ID. Returns nil if not found.
 func (s *MySql) findAttributeDescription(attributeId, languageId int64) (*entity.AttributeDescription, error) {
 	query := fmt.Sprintf(
 		`SELECT
@@ -883,6 +937,7 @@ func (s *MySql) findAttributeDescription(attributeId, languageId int64) (*entity
 	return nil, nil
 }
 
+// upsertAttributeDescription creates or updates an attribute description for the given attribute and language.
 func (s *MySql) upsertAttributeDescription(attributeId int64, attributeDescription *entity.AttributeDescription) error {
 	var query string
 	var err error
@@ -922,6 +977,8 @@ func (s *MySql) upsertAttributeDescription(attributeId int64, attributeDescripti
 
 	return nil
 }
+
+// findProductAttribute looks up a product attribute value by product, attribute, and language IDs. Returns nil if not found.
 func (s *MySql) findProductAttribute(productId, attributeId, languageId int64) (*entity.ProductAttribute, error) {
 	query := fmt.Sprintf(
 		`SELECT
@@ -954,6 +1011,7 @@ func (s *MySql) findProductAttribute(productId, attributeId, languageId int64) (
 	return nil, nil
 }
 
+// upsertProductAttribute creates or updates a product attribute text value, resolving product and attribute UIDs to IDs.
 func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute) error {
 	var query string
 	var err error
@@ -1006,6 +1064,7 @@ func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute
 	return nil
 }
 
+// getProductByUID returns the product_id for a given product UID, or 0 if not found.
 func (s *MySql) getProductByUID(uid string) (int64, error) {
 	stmt, err := s.stmtSelectProductId()
 	if err != nil {
@@ -1023,6 +1082,8 @@ func (s *MySql) getProductByUID(uid string) (int64, error) {
 	return productId, nil
 }
 
+// getCategoryByUID returns the category_id for a given category UID.
+// If the category does not exist, it creates a new one and returns its ID.
 func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	if uid == "" {
 		return 0, nil
@@ -1061,6 +1122,7 @@ func (s *MySql) getCategoryByUID(uid string) (int64, error) {
 	return categoryId, nil
 }
 
+// getAttributeByUID returns the attribute_id for a given attribute UID, or 0 if not found.
 func (s *MySql) getAttributeByUID(uid string) (int64, error) {
 	stmt, err := s.stmtSelectAttributeId()
 	if err != nil {
@@ -1078,6 +1140,7 @@ func (s *MySql) getAttributeByUID(uid string) (int64, error) {
 	return attributeId, nil
 }
 
+// updateCategory updates an existing category's parent, sort order, status, and other fields.
 func (s *MySql) updateCategory(category *entity.Category) error {
 	stmt, err := s.stmtUpdateCategory()
 	if err != nil {
@@ -1098,6 +1161,7 @@ func (s *MySql) updateCategory(category *entity.Category) error {
 	return nil
 }
 
+// findCategoryDescription looks up a category description by category ID and language ID. Returns nil if not found.
 func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.CategoryDescription, error) {
 	stmt, err := s.stmtCategoryDescription()
 	if err != nil {
@@ -1117,6 +1181,8 @@ func (s *MySql) findCategoryDescription(categoryId, languageId int64) (*entity.C
 	return &categoryDescription, nil
 }
 
+// upsertCategoryDescription creates or updates a category description for the given category and language.
+// If the description is empty, only the name is updated.
 func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescription) error {
 	if categoryDesc.CategoryId == 0 {
 		return fmt.Errorf("category id not provided")
@@ -1171,6 +1237,8 @@ func (s *MySql) upsertCategoryDescription(categoryDesc *entity.CategoryDescripti
 	return nil
 }
 
+// getManufacturerId returns the manufacturer_id for a given name.
+// If the manufacturer does not exist, it creates a new one with a default store association.
 func (s *MySql) getManufacturerId(name string) (int64, error) {
 	if name == "" {
 		return 0, nil
@@ -1240,6 +1308,8 @@ func containsDangerousSQL(filter string) bool {
 	return false
 }
 
+// ReadTable performs a generic SELECT on a whitelisted table with optional filter and limit.
+// If plain is false, byte columns are decoded from base64 where possible.
 func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interface{}, error) {
 	// Strip prefix if provided (e.g., "oc_product" -> "product")
 	tableName := table
@@ -1316,8 +1386,10 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 	return results, nil
 }
 
+// FinalizeProductBatch deactivates all products not in the given batch, clears batch markers,
+// and returns the count of active products remaining.
 func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
-	// calculate the number of products in the batch
+	// count products in the batch
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE batch_uid=?", s.prefix)
 	var count int
 	err := s.db.QueryRow(query, batchUid).Scan(&count)
@@ -1327,25 +1399,22 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	if count == 0 {
 		return 0, fmt.Errorf("empty batch %s", batchUid)
 	}
-	// deactivate products not in the batch
+
+	// deactivate all products not belonging to this batch
 	query = fmt.Sprintf("UPDATE %sproduct SET status=0 WHERE batch_uid<>?", s.prefix)
 	_, err = s.db.Exec(query, batchUid)
 	if err != nil {
 		return 0, fmt.Errorf("update status: %w", err)
 	}
-	// remove batch_uid from products
+
+	// clear batch markers from all products
 	query = fmt.Sprintf("UPDATE %sproduct SET batch_uid=''", s.prefix)
 	_, err = s.db.Exec(query)
 	if err != nil {
 		return 0, fmt.Errorf("update batch_uid: %w", err)
 	}
-	// delete records from product_special table with product_id that is not present in product table or have status=0
-	//query = fmt.Sprintf("DELETE FROM %sproduct_special WHERE product_id NOT IN (SELECT product_id FROM %sproduct WHERE status=1)", s.prefix, s.prefix)
-	//_, err = s.db.Exec(query)
-	//if err != nil {
-	//	return 0, fmt.Errorf("delete product_special: %w", err)
-	//}
-	// calculate the number of products that have status=1
+
+	// count remaining active products
 	query = fmt.Sprintf("SELECT COUNT(*) FROM %sproduct WHERE status=1", s.prefix)
 	err = s.db.QueryRow(query).Scan(&count)
 	if err != nil {
@@ -1354,6 +1423,7 @@ func (s *MySql) FinalizeProductBatch(batchUid string) (int, error) {
 	return count, nil
 }
 
+// OrderSearchId retrieves a full order record by its ID. Returns nil if not found.
 func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 	stmt, err := s.stmtSelectOrder()
 	if err != nil {
@@ -1431,6 +1501,7 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 	return &order, nil
 }
 
+// OrderSearchStatus returns a list of order IDs matching the given status and created after the specified time.
 func (s *MySql) OrderSearchStatus(statusId int64, from time.Time) ([]int64, error) {
 	stmt, err := s.stmtSelectOrderStatus()
 	if err != nil {
@@ -1460,6 +1531,7 @@ func (s *MySql) OrderSearchStatus(statusId int64, from time.Time) ([]int64, erro
 	return orderIds, nil
 }
 
+// OrderProducts returns all product line items for the given order ID.
 func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 	stmt, err := s.stmtSelectOrderProducts()
 	if err != nil {
@@ -1510,6 +1582,7 @@ func (s *MySql) OrderProducts(orderId int64) ([]*entity.ProductOrder, error) {
 	return products, nil
 }
 
+// OrderTotals returns all total line items (subtotal, tax, shipping, etc.) for the given order ID.
 func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
 	stmt, err := s.stmtSelectOrderTotals()
 	if err != nil {
@@ -1578,6 +1651,7 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) e
 	return nil
 }
 
+// UpdateCurrencyValue sets the exchange rate value for the given currency code.
 func (s *MySql) UpdateCurrencyValue(currencyCode string, value float64) error {
 	stmt, err := s.stmtUpdateCurrencyValue()
 	if err != nil {

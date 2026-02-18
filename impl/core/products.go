@@ -87,12 +87,49 @@ func (c *Core) SetProductImages(products []*entity.ProductData) error {
 		return fmt.Errorf("repository not initialized")
 	}
 	for _, product := range products {
-		err := c.repo.CleanUpProductImages(product.Uid, product.Images)
+		// Clean up images that are no longer in the list and get existing UIDs
+		existing, err := c.repo.CleanUpProductImages(product.Uid, product.Images)
 		if err != nil {
 			return fmt.Errorf("product %s: %v", product.Uid, err)
 		}
+
+		// Insert images that are in the request but not yet in the database
+		for i, fileUid := range product.Images {
+			if existing[fileUid] {
+				continue
+			}
+
+			// Resolve image file on disk by mask {imagePath}/{fileUid}*
+			imageUrl, err := c.resolveImageUrl(fileUid)
+			if err != nil {
+				return fmt.Errorf("product %s, image %s: %v", product.Uid, fileUid, err)
+			}
+
+			err = c.repo.InsertProductImage(product.Uid, fileUid, imageUrl, i)
+			if err != nil {
+				return fmt.Errorf("product %s, insert image %s: %v", product.Uid, fileUid, err)
+			}
+		}
 	}
 	return nil
+}
+
+// resolveImageUrl finds the image file on disk by file_uid glob pattern
+// and returns the relative URL for the database (e.g. "catalog/product/uid.jpg").
+func (c *Core) resolveImageUrl(fileUid string) (string, error) {
+	pattern := filepath.Join(c.imagePath, fileUid+".*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", fmt.Errorf("glob %s: %v", pattern, err)
+	}
+	if len(matches) == 0 {
+		return "", fmt.Errorf("image file not found: %s", pattern)
+	}
+
+	// Use the first match; extract the file extension
+	fileName := filepath.Base(matches[0])
+	imageUrl := c.imageUrl + fileName
+	return imageUrl, nil
 }
 
 func (c *Core) LoadProductSpecial(products []*entity.ProductSpecial) error {
