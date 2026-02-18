@@ -8,6 +8,7 @@ import (
 	"ocapi/internal/lib/sl"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func (c *Core) FindProduct(uid string) (interface{}, error) {
@@ -87,14 +88,26 @@ func (c *Core) SetProductImages(products []*entity.ProductData) error {
 		return fmt.Errorf("repository not initialized")
 	}
 	for _, product := range products {
+		// Filter out the main image UID — it belongs in the product table, not product_image
+		mainImageUid := c.mainImageUid(product.Uid)
+		additionalImages := product.Images
+		if mainImageUid != "" {
+			additionalImages = make([]string, 0, len(product.Images))
+			for _, uid := range product.Images {
+				if uid != mainImageUid {
+					additionalImages = append(additionalImages, uid)
+				}
+			}
+		}
+
 		// Clean up images that are no longer in the list and get existing UIDs
-		existing, err := c.repo.CleanUpProductImages(product.Uid, product.Images)
+		existing, err := c.repo.CleanUpProductImages(product.Uid, additionalImages)
 		if err != nil {
 			return fmt.Errorf("product %s: %v", product.Uid, err)
 		}
 
 		// Insert images that are in the request but not yet in the database
-		for i, fileUid := range product.Images {
+		for i, fileUid := range additionalImages {
 			if existing[fileUid] {
 				continue
 			}
@@ -112,6 +125,19 @@ func (c *Core) SetProductImages(products []*entity.ProductData) error {
 		}
 	}
 	return nil
+}
+
+// mainImageUid extracts the file UID from the product's main image path.
+// Returns empty string if the main image is not set or on error.
+func (c *Core) mainImageUid(productUid string) string {
+	mainImage, err := c.repo.GetProductMainImage(productUid)
+	if err != nil || mainImage == "" {
+		return ""
+	}
+	// Extract UID from path like "catalog/products/798b00f4-d767-11f0-9d8e-0cc47a39a0b2.jpg"
+	base := filepath.Base(mainImage)
+	ext := filepath.Ext(base)
+	return strings.TrimSuffix(base, ext)
 }
 
 // resolveImageUrl finds the image file on disk by file_uid glob pattern

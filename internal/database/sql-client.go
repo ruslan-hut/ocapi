@@ -420,6 +420,24 @@ func (s *MySql) CleanUpProductImages(productUid string, images []string) (map[st
 	return seen, nil
 }
 
+// GetProductMainImage returns the main image path from the product table for the given product UID.
+func (s *MySql) GetProductMainImage(productUid string) (string, error) {
+	stmt, err := s.stmtGetProductMainImage()
+	if err != nil {
+		return "", err
+	}
+
+	var image sql.NullString
+	err = stmt.QueryRow(productUid).Scan(&image)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", fmt.Errorf("select main image: %v", err)
+	}
+	return image.String, nil
+}
+
 // InsertProductImage adds a new additional image row into the product_image table for the given product.
 func (s *MySql) InsertProductImage(productUid string, fileUid string, imageUrl string, sortOrder int) error {
 	productId, err := s.getProductByUID(productUid)

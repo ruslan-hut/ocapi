@@ -282,6 +282,11 @@ func (s *MySql) stmtGetProductNotMainImage() (*sql.Stmt, error) {
 	return s.prepareStmt("getProductNotMainImage", query)
 }
 
+func (s *MySql) stmtGetProductMainImage() (*sql.Stmt, error) {
+	query := fmt.Sprintf(`SELECT image FROM %sproduct WHERE product_uid = ? LIMIT 1`, s.prefix)
+	return s.prepareStmt("getProductMainImage", query)
+}
+
 func (s *MySql) stmtGetProductImages() (*sql.Stmt, error) {
 	query := fmt.Sprintf(
 		`SELECT product_image_id, file_uid
