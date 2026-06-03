@@ -21,7 +21,7 @@ import (
 func main() {
 
 	configPath := flag.String("conf", "config.yml", "path to config file")
-	logPath := flag.String("log", "/var/log/", "path to log file directory")
+	logPath := flag.String("log", "/var/log/ocapi.log", "log file name")
 	flag.Parse()
 
 	conf := config.MustLoad(*configPath)

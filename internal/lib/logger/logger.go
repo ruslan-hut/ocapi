@@ -4,28 +4,25 @@ import (
 	"log"
 	"log/slog"
 	"os"
-	"path/filepath"
 )
 
 const (
-	envLocal    = "local"
-	envDev      = "dev"
-	envProd     = "prod"
-	logFileName = "ocapi.log"
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
 
-func SetupLogger(env, path string) *slog.Logger {
+func SetupLogger(env, logFile string) *slog.Logger {
 	var logger *slog.Logger
-	var logFile *os.File
+	var lf *os.File
 	var err error
 
 	if env != envLocal {
-		logPath := logFilePath(path)
-		logFile, err = os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		lf, err = os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatal("error opening log file: ", err)
 		}
-		log.Printf("env: %s; log file: %s", env, logPath)
+		log.Printf("env: %s; log file: %s", env, logFile)
 	}
 
 	switch env {
@@ -35,19 +32,15 @@ func SetupLogger(env, path string) *slog.Logger {
 		)
 	case envDev:
 		logger = slog.New(
-			slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelDebug}),
+			slog.NewTextHandler(lf, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
 	case envProd:
 		logger = slog.New(
-			slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelInfo}),
+			slog.NewTextHandler(lf, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)
 	default:
 		log.Fatal("invalid environment: ", env)
 	}
 
 	return logger
-}
-
-func logFilePath(path string) string {
-	return filepath.Join(path, logFileName)
 }
