@@ -1,3 +1,7 @@
+## Command-line flags
+- `-conf` — path to the config file (default `config.yml`)
+- `-log` — full log file name (default `/var/log/ocapi.log`); ignored when `env: local`, which logs to stdout
+
 ## Config file structure
 The configuration file is a YAML file that contains the following sections:
 ```yaml
