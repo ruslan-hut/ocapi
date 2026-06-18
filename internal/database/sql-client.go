@@ -255,17 +255,84 @@ func (s *MySql) SaveAttributes(attributes []*entity.Attribute) error {
 	return nil
 }
 
-// SaveProductAttributes upserts attribute values for a batch of product-attribute pairs.
+// productAttributeKey identifies a product_attribute row within a single product.
+type productAttributeKey struct {
+	attributeId int64
+	languageId  int64
+}
+
+// SaveProductAttributes synchronises attribute values for a batch of product-attribute
+// pairs. The request is treated as the complete attribute set for each product: existing
+// values are updated, new ones inserted, and any attribute rows for that product that are
+// not present in the request (across all languages) are removed.
 func (s *MySql) SaveProductAttributes(productAttributes []*entity.ProductAttribute) error {
+	// Group the flat request list by product so the full set is known before deleting.
+	groups := make(map[string][]*entity.ProductAttribute)
+	order := make([]string, 0)
 	for _, productAttribute := range productAttributes {
+		if _, ok := groups[productAttribute.ProductUid]; !ok {
+			order = append(order, productAttribute.ProductUid)
+		}
+		groups[productAttribute.ProductUid] = append(groups[productAttribute.ProductUid], productAttribute)
+	}
 
-		err := s.upsertProductAttribute(productAttribute)
-
+	for _, uid := range order {
+		productId, err := s.getProductByUID(uid)
 		if err != nil {
-			return fmt.Errorf("product attribute %s: %v", productAttribute.ProductUid, err)
+			return fmt.Errorf("product attribute %s: product search: %v", uid, err)
+		}
+		if productId == 0 {
+			return fmt.Errorf("product attribute %s: product not found", uid)
+		}
+
+		keep := make([]productAttributeKey, 0, len(groups[uid]))
+		for _, productAttribute := range groups[uid] {
+			attributeId, err := s.getAttributeByUID(productAttribute.AttributeUid)
+			if err != nil {
+				return fmt.Errorf("product attribute %s: attribute search: %v", uid, err)
+			}
+			if attributeId == 0 {
+				return fmt.Errorf("product attribute %s: attribute %s not found", uid, productAttribute.AttributeUid)
+			}
+
+			if err := s.upsertProductAttribute(productId, attributeId, productAttribute.LanguageId, productAttribute.Text); err != nil {
+				return fmt.Errorf("product attribute %s: %v", uid, err)
+			}
+			keep = append(keep, productAttributeKey{attributeId: attributeId, languageId: productAttribute.LanguageId})
+		}
+
+		if err := s.deleteProductAttributesExcept(productId, keep); err != nil {
+			return fmt.Errorf("product attribute %s: cleanup: %v", uid, err)
 		}
 	}
 	return nil
+}
+
+// deleteProductAttributesExcept removes all product_attribute rows for the given product
+// whose (attribute_id, language_id) pair is not in keep.
+func (s *MySql) deleteProductAttributesExcept(productId int64, keep []productAttributeKey) error {
+	if len(keep) == 0 {
+		query := fmt.Sprintf(`DELETE FROM %sproduct_attribute WHERE product_id=?`, s.prefix)
+		_, err := s.db.Exec(query, productId)
+		return err
+	}
+
+	placeholders := make([]string, len(keep))
+	args := make([]interface{}, 0, 1+len(keep)*2)
+	args = append(args, productId)
+	for i, k := range keep {
+		placeholders[i] = "(?,?)"
+		args = append(args, k.attributeId, k.languageId)
+	}
+
+	query := fmt.Sprintf(
+		`DELETE FROM %sproduct_attribute
+				WHERE product_id=? AND (attribute_id, language_id) NOT IN (%s)`,
+		s.prefix,
+		strings.Join(placeholders, ","),
+	)
+	_, err := s.db.Exec(query, args...)
+	return err
 }
 
 // UpdateProductImage routes the image update to either the main product image or an additional image handler.
@@ -1029,38 +1096,26 @@ func (s *MySql) findProductAttribute(productId, attributeId, languageId int64) (
 	return nil, nil
 }
 
-// upsertProductAttribute creates or updates a product attribute text value, resolving product and attribute UIDs to IDs.
-func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute) error {
-	var query string
-	var err error
-
-	productId, err := s.getProductByUID(productAttribute.ProductUid)
-	if err != nil {
-		return fmt.Errorf("product search: %v", err)
-	}
-
-	attributeId, err := s.getAttributeByUID(productAttribute.AttributeUid)
-	if err != nil {
-		return fmt.Errorf("attribute search: %v", err)
-	}
-
-	desc, err := s.findProductAttribute(productId, attributeId, productAttribute.LanguageId)
+// upsertProductAttribute creates or updates a product attribute text value for already
+// resolved product and attribute IDs.
+func (s *MySql) upsertProductAttribute(productId, attributeId, languageId int64, text string) error {
+	desc, err := s.findProductAttribute(productId, attributeId, languageId)
 	if err != nil {
 		return fmt.Errorf("lookup product attribute: %v", err)
 	}
 
 	if desc != nil {
-		query = fmt.Sprintf(
+		query := fmt.Sprintf(
 			`UPDATE %sproduct_attribute SET
 					text = ?
 			    WHERE product_id=? AND attribute_id=? AND language_id=?`,
 			s.prefix,
 		)
 		_, err = s.db.Exec(query,
-			productAttribute.Text,
+			text,
 			productId,
 			attributeId,
-			productAttribute.LanguageId)
+			languageId)
 		if err != nil {
 			return fmt.Errorf("update: %v", err)
 		}
@@ -1069,8 +1124,8 @@ func (s *MySql) upsertProductAttribute(productAttribute *entity.ProductAttribute
 		userData := map[string]interface{}{
 			"product_id":   productId,
 			"attribute_id": attributeId,
-			"language_id":  productAttribute.LanguageId,
-			"text":         productAttribute.Text,
+			"language_id":  languageId,
+			"text":         text,
 		}
 
 		_, err = s.insert("product_attribute", userData)
