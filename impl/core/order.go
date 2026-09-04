@@ -16,6 +16,9 @@ func (c *Core) OrderSearch(id int64) (*entity.Order, error) {
 	if err != nil {
 		return nil, err
 	}
+	if order == nil {
+		return nil, fmt.Errorf("order not found: %d", id)
+	}
 
 	products, err := c.repo.OrderProducts(id)
 	if err != nil {
