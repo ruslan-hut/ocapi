@@ -14,6 +14,7 @@ import (
 	"ocapi/internal/http-server/handlers/batch"
 	"ocapi/internal/http-server/handlers/category"
 	"ocapi/internal/http-server/handlers/currency"
+	"ocapi/internal/http-server/handlers/customer"
 	"ocapi/internal/http-server/handlers/errors"
 	"ocapi/internal/http-server/handlers/fetch"
 	"ocapi/internal/http-server/handlers/order"
@@ -38,6 +39,7 @@ type Handler interface {
 	category.Core
 	order.Core
 	currency.Core
+	customer.Core
 	fetch.Core
 	batch.Core
 }
@@ -101,6 +103,9 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error
 			})
 			v1.Route("/currency", func(r chi.Router) {
 				r.Post("/", currency.Update(log, handler))
+			})
+			v1.Route("/customer", func(r chi.Router) {
+				r.Post("/", customer.Update(log, handler))
 			})
 		})
 	})

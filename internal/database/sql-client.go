@@ -1738,3 +1738,18 @@ func (s *MySql) UpdateCurrencyValue(currencyCode string, value float64) error {
 
 	return nil
 }
+
+// UpdateCustomerGroup sets the customer group for the given customer.
+func (s *MySql) UpdateCustomerGroup(customerId int64, groupId int) error {
+	stmt, err := s.stmtUpdateCustomerGroup()
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(groupId, customerId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

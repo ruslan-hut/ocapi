@@ -346,3 +346,13 @@ func (s *MySql) stmtUpdateCurrencyValue() (*sql.Stmt, error) {
 	)
 	return s.prepareStmt("updateCurrencyValue", query)
 }
+
+func (s *MySql) stmtUpdateCustomerGroup() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`UPDATE %scustomer SET
+				customer_group_id = ?
+			    WHERE customer_id = ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("updateCustomerGroup", query)
+}

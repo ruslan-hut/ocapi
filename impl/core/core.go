@@ -35,6 +35,8 @@ type Repository interface {
 
 	UpdateCurrencyValue(currencyCode string, value float64) error
 
+	UpdateCustomerGroup(customerId int64, groupId int) error
+
 	ReadTable(table, filter string, limit int, plain bool) (interface{}, error)
 	Stats() string
 	CheckApiKey(key string) (string, error)

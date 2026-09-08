@@ -398,3 +398,28 @@ Use the `custom_fields` array to update additional product columns that are not 
     "timestamp": "2025-03-24T11:22:39Z"
   }
   ```
+### Customers
+
+#### Update Customer Group
+- Endpoint: `/api/v1/customer`
+- Method: `POST`
+- Description: Sets `customer_group_id` for existing customers. Customers are addressed by their OpenCart `customer_id`; the endpoint never creates customers.
+- Request Body:
+  ```json
+  {
+    "data": [
+      {
+        "customer_id": 1042,
+        "customer_group_id": 5
+      }
+    ]
+  }
+  ```
+- Response:
+  ```json
+  {
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
