@@ -1361,6 +1361,7 @@ var allowedReadTables = map[string]bool{
 	"order": true, "order_product": true, "order_total": true, "order_history": true,
 	"attribute": true, "attribute_description": true,
 	"manufacturer": true, "currency": true,
+	"customer": true,
 }
 
 // dangerousSQLPatterns contains patterns that indicate SQL injection attempts
