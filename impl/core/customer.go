@@ -25,3 +25,25 @@ func (c *Core) UpdateCustomers(data []*entity.Customer) error {
 	}
 	return nil
 }
+
+// customerListLimit caps the page size of the customers listing.
+const customerListLimit = 500
+
+// CustomerList returns a page of customers, used to match site customers
+// with the accounting system by phone or email.
+func (c *Core) CustomerList(limit, offset int) ([]*entity.CustomerInfo, error) {
+	if c.repo == nil {
+		return nil, fmt.Errorf("repository not set")
+	}
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > customerListLimit {
+		limit = customerListLimit
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	return c.repo.CustomersList(limit, offset)
+}

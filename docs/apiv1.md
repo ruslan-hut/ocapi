@@ -423,3 +423,30 @@ Use the `custom_fields` array to update additional product columns that are not 
     "timestamp": "2025-03-24T11:22:39Z"
   }
   ```
+
+#### List Customers
+- Endpoint: `/api/v1/customers`
+- Method: `GET`
+- Query Parameters:
+  - `limit` (optional, default 100, max 500)
+  - `offset` (optional, default 0)
+- Description: Returns a page of customers ordered by `customer_id`. Used to match customers migrated from a legacy site with the accounting system by phone or email.
+- Response:
+  ```json
+  {
+    "data": [
+      {
+        "customer_id": 1042,
+        "customer_group_id": 3,
+        "firstname": "Anna",
+        "lastname": "Koval",
+        "email": "anna@example.com",
+        "telephone": "+380671234567",
+        "status": 1
+      }
+    ],
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```

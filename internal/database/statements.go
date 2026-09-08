@@ -356,3 +356,21 @@ func (s *MySql) stmtUpdateCustomerGroup() (*sql.Stmt, error) {
 	)
 	return s.prepareStmt("updateCustomerGroup", query)
 }
+
+func (s *MySql) stmtSelectCustomers() (*sql.Stmt, error) {
+	query := fmt.Sprintf(
+		`SELECT
+				customer_id,
+				customer_group_id,
+				firstname,
+				lastname,
+				email,
+				telephone,
+				status
+			    FROM %scustomer
+			    ORDER BY customer_id
+			    LIMIT ? OFFSET ?`,
+		s.prefix,
+	)
+	return s.prepareStmt("selectCustomers", query)
+}

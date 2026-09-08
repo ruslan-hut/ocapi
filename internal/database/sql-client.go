@@ -1772,3 +1772,38 @@ func (s *MySql) UpdateCustomerGroup(customerId int64, groupId int) error {
 
 	return nil
 }
+
+// CustomersList returns a page of customers ordered by customer_id.
+func (s *MySql) CustomersList(limit, offset int) ([]*entity.CustomerInfo, error) {
+	stmt, err := s.stmtSelectCustomers()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := stmt.Query(limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+
+	customers := make([]*entity.CustomerInfo, 0)
+	for rows.Next() {
+		customer := &entity.CustomerInfo{}
+		if err = rows.Scan(
+			&customer.CustomerId,
+			&customer.CustomerGroupId,
+			&customer.FirstName,
+			&customer.LastName,
+			&customer.Email,
+			&customer.Telephone,
+			&customer.Status,
+		); err != nil {
+			return nil, err
+		}
+		customers = append(customers, customer)
+	}
+
+	return customers, rows.Err()
+}

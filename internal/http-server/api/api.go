@@ -107,6 +107,9 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error
 			v1.Route("/customer", func(r chi.Router) {
 				r.Post("/", customer.Update(log, handler))
 			})
+			v1.Route("/customers", func(r chi.Router) {
+				r.Get("/", customer.List(log, handler))
+			})
 		})
 	})
 
