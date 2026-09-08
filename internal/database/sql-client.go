@@ -1364,6 +1364,11 @@ var allowedReadTables = map[string]bool{
 	"customer": true,
 }
 
+// sensitiveReadColumns lists column names never exposed through ReadTable
+var sensitiveReadColumns = map[string]bool{
+	"password": true, "salt": true, "token": true, "code": true, "secret": true,
+}
+
 // dangerousSQLPatterns contains patterns that indicate SQL injection attempts
 var dangerousSQLPatterns = []string{
 	";", "--", "/*", "*/", "DROP", "DELETE", "UPDATE", "INSERT",
@@ -1401,6 +1406,16 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 		return nil, fmt.Errorf("invalid filter: contains forbidden pattern")
 	}
 
+	// Block filtering on sensitive columns to prevent value probing
+	if filter != "" {
+		lower := strings.ToLower(filter)
+		for col := range sensitiveReadColumns {
+			if strings.Contains(lower, col) {
+				return nil, fmt.Errorf("invalid filter: forbidden column %s", col)
+			}
+		}
+	}
+
 	query := fmt.Sprintf("SELECT * FROM %s%s", s.prefix, tableName)
 	if filter != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, filter)
@@ -1435,6 +1450,9 @@ func (s *MySql) ReadTable(table, filter string, limit int, plain bool) (interfac
 
 		rowMap := make(map[string]interface{})
 		for i, colName := range columns {
+			if sensitiveReadColumns[strings.ToLower(colName)] {
+				continue
+			}
 			if plain {
 				rowMap[colName] = columnValues[i]
 				continue
