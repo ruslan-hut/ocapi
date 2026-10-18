@@ -47,8 +47,8 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		time.Sleep(30 * time.Second)
 	}
 
-	db.SetMaxOpenConns(50)           // max number of open connections
-	db.SetMaxIdleConns(10)           // max number of idle connections in the pool
+	db.SetMaxOpenConns(10)           // max number of open connections
+	db.SetMaxIdleConns(5)            // max number of idle connections in the pool
 	db.SetConnMaxLifetime(time.Hour) // connection max lifetime
 
 	// Initialize allowed custom fields with defaults
