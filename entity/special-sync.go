@@ -52,6 +52,8 @@ type SpecialSync struct {
 
 // ProductSpecialSyncRequest replaces special prices of the listed groups for every product in Data.
 type ProductSpecialSyncRequest struct {
+	Page   int            `json:"page"`
+	Total  int            `json:"total"`
 	Data   []*SpecialSync `json:"data" validate:"required,dive"`
 	Groups []int64        `json:"groups" validate:"required,min=1,dive,gt=0"`
 }

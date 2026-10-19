@@ -35,7 +35,11 @@ func SyncSpecial(log *slog.Logger, handler Core) http.HandlerFunc {
 			render.JSON(w, r, response.Error(fmt.Sprintf("Failed to decode: %v", err)))
 			return
 		}
-		logger = logger.With(slog.Int("size", len(body.Data)))
+		logger = logger.With(
+			slog.Int("page", body.Page),
+			slog.Int("total", body.Total),
+			slog.Int("size", len(body.Data)),
+		)
 
 		start := time.Now()
 		result, err := handler.SyncProductSpecials(body.Groups, body.Data)
