@@ -21,6 +21,9 @@ type Repository interface {
 	GetProductMainImage(productUid string) (string, error)
 	SaveProductAttributes(attributes []*entity.ProductAttribute) error
 	SaveProductSpecial(products []*entity.ProductSpecial) error
+	SyncProductSpecials(groups []int64, specials []*entity.SpecialSync) (*entity.SyncResult, error)
+	SyncCustomerSpecials(specials []*entity.CustomerSpecial) (*entity.SyncResult, error)
+	DeleteCustomerSpecials(customerIds []int64) (int64, error)
 
 	SaveCategories(categoriesData []*entity.CategoryData) error
 	SaveCategoriesDescription(categoriesDescData []*entity.CategoryDescriptionData) error
@@ -65,6 +68,7 @@ type Core struct {
 	authKey   string
 	imagePath string
 	imageUrl  string
+	cachePath string
 	keys      map[string]cachedToken
 	keysMu    sync.RWMutex
 	log       *slog.Logger
@@ -88,6 +92,10 @@ func (c *Core) SetAuthKey(key string) {
 func (c *Core) SetImageParameters(imagePath, imageUrl string) {
 	c.imagePath = imagePath
 	c.imageUrl = imageUrl
+}
+
+func (c *Core) SetCachePath(cachePath string) {
+	c.cachePath = cachePath
 }
 
 func (c *Core) SetMessageService(ms MessageService) {

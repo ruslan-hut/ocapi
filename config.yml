@@ -20,6 +20,9 @@ sql:
 images:
   path: /path/to/images/ # Path to the images directory on the server
   url: catalog/product/  # URL to the images directory
+## OpenCart file cache
+cache:
+  path: ""               # DIR_CACHE of the site (system/storage/cache/); empty disables cache clearing
 ## Telegram bot configuration
 telegram:
   enabled: false

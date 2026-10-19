@@ -122,6 +122,51 @@ Use the `custom_fields` array to update additional product columns that are not 
   If the parameter is set to `false`, the description will be added only if it doesn't already exist.
   If the parameter is omitted, it defaults to `false`. If set to `true`, the description will be added or updated.
 
+#### Sync Product Special Prices
+- **Endpoint:** `/api/v1/product/special/sync`
+- **Method:** `POST`
+- **Description:** Full replacement of customer group special prices. For every product in `data`, all `product_special` rows of the groups listed in `groups` are deleted and the rows from the request are inserted. Rows of other groups (e.g. entered manually in the admin) are kept. Several rows per product × group are allowed: a base price (`priority` 2, no dates) and non-overlapping dated intervals (`priority` 1). Every `group_id` in `data` must be listed in `groups`. Unknown `product_uid` values are skipped and reported. After writing, the OpenCart file cache of product blocks is cleared (`cache.path` in config).
+- **Request Body:**
+  ```json
+  {
+    "groups": [3, 4],
+    "data": [
+      {
+        "product_uid": "28ac4a2c-6f4c-11ef-b7f7-00155d018000",
+        "group_id": 3,
+        "price": 100.00,
+        "priority": 2,
+        "date_start": "",
+        "date_end": ""
+      },
+      {
+        "product_uid": "28ac4a2c-6f4c-11ef-b7f7-00155d018000",
+        "group_id": 3,
+        "price": 80.00,
+        "priority": 1,
+        "date_start": "2026-10-19T14:00:00",
+        "date_end": "2026-10-19T18:00:01"
+      }
+    ]
+  }
+  ```
+  Dates `date_start`/`date_end` are the shop's local wall-clock time `YYYY-MM-DDTHH:MM:SS` **without** timezone offset or `Z` (also accepted: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD`). They are stored as is, without timezone conversion; the site compares them with `NOW()` in the shop timezone. An empty value, `0000-00-00...` or the 1C empty date `0001-01-01T00:00:00` means "no bound". `date_end` is exclusive.
+- **Response:** number of inserted (`written`) and deleted (`deleted`) rows and skipped product UIDs.
+  ```json
+  {
+    "data": {
+      "written": 2,
+      "deleted": 1,
+      "skipped_products": [],
+      "skipped_customers": []
+    },
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2026-10-19T12:09:32Z"
+  }
+  ```
+  The legacy endpoint `/api/v1/product/special` (upsert of a single row per product × group) is kept until the accounting system switches to sync.
+
 ### Categories. Products Hierarchy
 
 #### Update or Create Category
@@ -448,5 +493,64 @@ Use the `custom_fields` array to update additional product columns that are not 
     "success": true,
     "status_message": "Success",
     "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
+
+#### Sync Customer Personal Prices
+- **Endpoint:** `/api/v1/customer/special/sync`
+- **Method:** `POST`
+- **Description:** Full replacement of personal prices (`customer_product_special`) for every `customer_id` in the request: all rows of the customer are deleted, then the rows from the request are inserted. Several non-overlapping intervals per customer × product are allowed. All rows of one customer must be in the same request. Unknown `product_uid` values and customers missing on the site are skipped and reported; the rest of the request is written.
+- **Request Body:**
+  ```json
+  {
+    "data": [
+      {
+        "customer_id": 1042,
+        "product_uid": "28ac4a2c-6f4c-11ef-b7f7-00155d018000",
+        "price": 70.00,
+        "date_start": "2026-10-19T14:00:00",
+        "date_end": "2026-10-19T18:00:01"
+      }
+    ]
+  }
+  ```
+  Dates `date_start`/`date_end` are the shop's local wall-clock time `YYYY-MM-DDTHH:MM:SS` **without** timezone offset or `Z` (also accepted: `YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD`). They are stored as is, without timezone conversion; the site compares them with `NOW()` in the shop timezone. An empty value, `0000-00-00...` or the 1C empty date `0001-01-01T00:00:00` means "no bound" (stored as `NULL`). `date_end` is exclusive.
+- **Response:**
+  ```json
+  {
+    "data": {
+      "written": 1,
+      "deleted": 2,
+      "skipped_products": ["0b5d1c7e-0000-0000-0000-000000000000"],
+      "skipped_customers": [999999]
+    },
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2026-10-19T12:09:46Z"
+  }
+  ```
+
+#### Delete Customer Personal Prices
+- **Endpoint:** `/api/v1/customer/special/delete/clients`
+- **Method:** `POST`
+- **Description:** Deletes all personal prices of the listed customers.
+- **Request Body:**
+  ```json
+  {
+    "data": [1042, 1043]
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "data": {
+      "written": 0,
+      "deleted": 3,
+      "skipped_products": [],
+      "skipped_customers": []
+    },
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2026-10-19T12:09:46Z"
   }
   ```

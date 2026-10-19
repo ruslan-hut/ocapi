@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/url"
 	"ocapi/entity"
 	"ocapi/internal/config"
 	"strings"
@@ -29,8 +30,10 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 	if !conf.SQL.Enabled {
 		return nil, nil
 	}
-	connectionURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		conf.SQL.UserName, conf.SQL.Password, conf.SQL.HostName, conf.SQL.Port, conf.SQL.Database)
+	// sql_mode as OpenCart sets it for its own sessions: zero dates are valid "no bound" values
+	connectionURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&sql_mode=%s",
+		conf.SQL.UserName, conf.SQL.Password, conf.SQL.HostName, conf.SQL.Port, conf.SQL.Database,
+		url.QueryEscape("'NO_ZERO_IN_DATE,NO_ENGINE_SUBSTITUTION'"))
 	db, err := sql.Open("mysql", connectionURI)
 	if err != nil {
 		return nil, fmt.Errorf("sql connect: %w", err)
@@ -90,6 +93,12 @@ func NewSQLClient(conf *config.Config) (*MySql, error) {
 		return nil, err
 	}
 	if err = sdb.addColumnIfNotExists("product_image", "file_uid", "VARCHAR(64) NOT NULL"); err != nil {
+		return nil, err
+	}
+	if err = sdb.migrateProductSpecialDates(); err != nil {
+		return nil, err
+	}
+	if err = sdb.createCustomerSpecialTable(); err != nil {
 		return nil, err
 	}
 
