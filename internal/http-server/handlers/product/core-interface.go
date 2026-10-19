@@ -10,4 +10,5 @@ type Core interface {
 	SetProductImages(products []*entity.ProductData) error
 	LoadProductAttributes(products []*entity.ProductAttribute) error
 	LoadProductSpecial(products []*entity.ProductSpecial) error
+	SyncProductSpecials(groups []int64, specials []*entity.SpecialSync) (*entity.SyncResult, error)
 }

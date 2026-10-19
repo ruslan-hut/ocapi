@@ -28,6 +28,9 @@ type Config struct {
 		Path string `yaml:"path" env-default:""`
 		Url  string `yaml:"url" env-default:""`
 	} `yaml:"images"`
+	Cache struct {
+		Path string `yaml:"path" env-default:""` // OpenCart file cache directory (DIR_CACHE)
+	} `yaml:"cache"`
 	Product struct {
 		CustomFields []string `yaml:"custom_fields"` // additional allowed custom field names
 	} `yaml:"product"`

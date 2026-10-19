@@ -79,6 +79,7 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error
 				r.Post("/image", product.SaveImage(log, handler))
 				r.Post("/images", product.SetImages(log, handler))
 				r.Post("/special", product.SaveSpecial(log, handler))
+				r.Post("/special/sync", product.SyncSpecial(log, handler))
 			})
 			v1.Route("/attribute", func(r chi.Router) {
 				r.Post("/", attribute.Save(log, handler))
@@ -106,6 +107,8 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error
 			})
 			v1.Route("/customer", func(r chi.Router) {
 				r.Post("/", customer.Update(log, handler))
+				r.Post("/special/sync", customer.SyncSpecial(log, handler))
+				r.Post("/special/delete/clients", customer.DeleteSpecial(log, handler))
 			})
 			v1.Route("/customers", func(r chi.Router) {
 				r.Get("/", customer.List(log, handler))

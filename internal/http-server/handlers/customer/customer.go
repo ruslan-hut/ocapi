@@ -15,6 +15,8 @@ import (
 type Core interface {
 	UpdateCustomers(data []*entity.Customer) error
 	CustomerList(limit, offset int) ([]*entity.CustomerInfo, error)
+	SyncCustomerSpecials(specials []*entity.CustomerSpecial) (*entity.SyncResult, error)
+	DeleteCustomerSpecials(customerIds []int64) (*entity.SyncResult, error)
 }
 
 func Update(log *slog.Logger, handler Core) http.HandlerFunc {

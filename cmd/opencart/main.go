@@ -33,6 +33,7 @@ func main() {
 	handler := core.New(lg)
 	handler.SetAuthKey(conf.Listen.ApiKey)
 	handler.SetImageParameters(conf.Images.Path, conf.Images.Url)
+	handler.SetCachePath(conf.Cache.Path)
 
 	db, err := database.NewSQLClient(conf)
 	if err != nil {

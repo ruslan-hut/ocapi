@@ -17,6 +17,8 @@ sql:
 images:
   path: ${IMAGES_PATH}
   url: ${IMAGES_URL}
+cache:
+  path: ${CACHE_PATH}
 telegram:
   enabled: false
   api_key: ${TELEGRAM_API_KEY}
