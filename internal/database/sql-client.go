@@ -1719,7 +1719,10 @@ func (s *MySql) OrderTotals(orderId int64) ([]*entity.OrderTotal, error) {
 	return totals, nil
 }
 
-// UpdateOrderStatus updates the current order status only if 'statusId' is less than the current status_id value
+// UpdateOrderStatus sets the order status and adds an order history record, but only
+// when the status actually changes. A repeated call with the current status is a no-op:
+// it neither touches date_modified (which made 1C reload the order and send the status
+// again) nor adds a history row (1.14M duplicates in oc_order_history, 2026).
 func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) error {
 	stmt, err := s.stmtUpdateOrderStatus()
 	if err != nil {
@@ -1730,12 +1733,16 @@ func (s *MySql) UpdateOrderStatus(orderId int64, statusId int, comment string) e
 		statusId,
 		time.Now(),
 		orderId,
+		statusId,
 	)
 	if err != nil {
 		return err
 	}
 
 	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
 	if rows > 0 {
 		// add order history record
 		rec := map[string]interface{}{

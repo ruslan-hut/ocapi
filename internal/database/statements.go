@@ -331,7 +331,7 @@ func (s *MySql) stmtUpdateOrderStatus() (*sql.Stmt, error) {
 		`UPDATE %sorder SET
 				order_status_id = ?,
 			    date_modified = ?
-			    WHERE order_id = ?`,
+			    WHERE order_id = ? AND order_status_id <> ?`,
 		s.prefix,
 	)
 	return s.prepareStmt("updateOrderStatus", query)
