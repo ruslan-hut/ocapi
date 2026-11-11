@@ -34,7 +34,11 @@ type Config struct {
 	Product struct {
 		CustomFields []string `yaml:"custom_fields"` // additional allowed custom field names
 	} `yaml:"product"`
-	Telegram struct {
+	// OrderPayment maps payment facts that a payment integration stores in custom
+	// columns of the order table. OpenCart has no such columns, so the whole block is
+	// optional and every column name is configurable; see docs/config.md.
+	OrderPayment OrderPayment `yaml:"order_payment"`
+	Telegram     struct {
 		Enabled bool   `yaml:"enabled" env-default:"false"`
 		ApiKey  string `yaml:"api_key" env-default:""`
 	} `yaml:"telegram"`
@@ -55,4 +59,22 @@ func MustLoad(path string) *Config {
 		}
 	})
 	return instance
+}
+
+// OrderPayment names the order-table columns holding payment data. An empty name means
+// the field is not available; an entirely empty block disables payment data.
+type OrderPayment struct {
+	StatusField      string `yaml:"status_field"`       // payment status, e.g. "paid"
+	IdField          string `yaml:"id_field"`           // payment id at the provider
+	AmountField      string `yaml:"amount_field"`       // paid amount
+	AmountMinorUnits bool   `yaml:"amount_minor_units"` // amount column holds cents
+	CurrencyField    string `yaml:"currency_field"`     // ISO currency code of the amount
+	TimeField        string `yaml:"time_field"`         // moment the status was reached
+	TimeLocation     string `yaml:"time_location"`      // IANA zone of the time column, default UTC
+}
+
+// Enabled reports whether at least one payment column is configured.
+func (p OrderPayment) Enabled() bool {
+	return p.StatusField != "" || p.IdField != "" || p.AmountField != "" ||
+		p.CurrencyField != "" || p.TimeField != ""
 }

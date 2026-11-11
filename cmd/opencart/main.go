@@ -40,6 +40,11 @@ func main() {
 		lg.Error("mysql client", sl.Err(err))
 	}
 	if db != nil {
+		if err = db.ConfigureOrderPayment(conf.OrderPayment); err != nil {
+			lg.Error("order payment data disabled", sl.Err(err))
+		} else if conf.OrderPayment.Enabled() {
+			lg.Info("order payment data enabled", slog.Bool("payments_list", db.PaymentsListEnabled()))
+		}
 		handler.SetRepository(db)
 		lg.Info("mysql client initialized",
 			slog.String("host", conf.SQL.HostName),

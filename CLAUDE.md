@@ -38,7 +38,10 @@ go run ./cmd/opencart -conf=config.yml -log=./
 ```
 
 ### Testing
-No test files are currently present in the project.
+```bash
+go test -short ./...                       # unit tests
+OCAPI_TEST_MYSQL_DSN='user:pw@tcp(127.0.0.1:3306)/scratch_db?parseTime=true' go test -race ./...  # + integration tests on a scratch MySQL/MariaDB
+```
 
 ## Architecture
 
@@ -162,6 +165,7 @@ Full API documentation is in `docs/apiv1.md`. The API follows RESTful patterns w
 - `GET /api/v1/order/{orderId}` - Get order with full details
 - `GET /api/v1/orders/{orderStatusId}` - Get order IDs by status
 - `POST /api/v1/order` - Update order status
+- `GET /api/v1/payments` - Order payment data by time (only with the optional `order_payment` config block)
 - `GET /api/v1/batch/{batchUid}` - Get batch processing results
 
 All requests require Bearer token authentication. Responses use consistent JSON format with `success`, `status_message`, `timestamp`, and `data` fields.

@@ -357,7 +357,13 @@ Use the `custom_fields` array to update additional product columns that are not 
           { "code": "sub_total", "title": "Sub-Total", "value": "129.90" },
           { "code": "shipping",  "title": "Flat Shipping Rate", "value": "20.00" },
           { "code": "total",     "title": "Total", "value": "149.90" }
-        ]
+        ],
+        "payment": {
+          "status": "paid",
+          "id": "pi_3Q...",
+          "amount": 149.9,
+          "time": "2025-03-02T10:15:00Z"
+        }
       }
     ],
     "success": true,
@@ -365,6 +371,8 @@ Use the `custom_fields` array to update additional product columns that are not 
     "timestamp": "2025-03-24T11:22:39Z"
   }
   ```
+
+- `payment` is present only when the `order_payment` config block is set (see `docs/config.md`). It holds only the configured fields; a configured field with an empty column is `null`.
 
 #### Get Products of Order
 - Endpoint: `/api/v1/order/{orderId}/products`
@@ -433,7 +441,7 @@ Use the `custom_fields` array to update additional product columns that are not 
 - Method: `GET`
 - Query Parameters:
   - `from_date` (optional, RFC3339). If omitted, defaulted to 30 days ago.
-- Description: Returns a list of order IDs that are in the given status and were modified since `from_date`.
+- Description: Returns up to 100 IDs of orders that are in the given status and were modified since `from_date`, most recently modified first.
 - Response:
   ```json
   {
@@ -443,6 +451,28 @@ Use the `custom_fields` array to update additional product columns that are not 
     "timestamp": "2025-03-24T11:22:39Z"
   }
   ```
+#### Get Payments by Time
+- Endpoint: `/api/v1/payments`
+- Method: `GET`
+- Query Parameters:
+  - `from_date` (required, RFC3339): return payments whose time is after this moment.
+  - `after_id` (optional): order id of the last row of the previous page; rows with a time equal to `from_date` are returned only when their order id is greater. Default `0`.
+  - `status` (optional): comma-separated payment statuses to return, e.g. `paid,canceled`. Ignored when no status column is configured.
+  - `limit` (optional): page size, `1..500`, default `500`.
+- Description: Lists payment data of orders ordered by payment time, then order id. Requires `order_payment.time_field`; otherwise answers `501`. Orders with an empty time are not listed. To read the next page, pass the `time` and `order_id` of the last row as `from_date` and `after_id`.
+- Response:
+  ```json
+  {
+    "data": [
+      { "order_id": 10234, "status": "paid", "id": "pi_3Q...", "amount": 149.9, "time": "2025-03-02T10:15:00Z" },
+      { "order_id": 10241, "status": "canceled", "id": "pi_3R...", "amount": 59.0, "time": "2025-03-02T11:40:12Z" }
+    ],
+    "success": true,
+    "status_message": "Success",
+    "timestamp": "2025-03-24T11:22:39Z"
+  }
+  ```
+
 ### Customers
 
 #### Update Customer Group

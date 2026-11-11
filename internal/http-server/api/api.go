@@ -18,6 +18,7 @@ import (
 	"ocapi/internal/http-server/handlers/errors"
 	"ocapi/internal/http-server/handlers/fetch"
 	"ocapi/internal/http-server/handlers/order"
+	"ocapi/internal/http-server/handlers/payment"
 	"ocapi/internal/http-server/handlers/product"
 	"ocapi/internal/http-server/handlers/service"
 	"ocapi/internal/http-server/middleware/authenticate"
@@ -38,6 +39,7 @@ type Handler interface {
 	attribute.Core
 	category.Core
 	order.Core
+	payment.Core
 	currency.Core
 	customer.Core
 	fetch.Core
@@ -95,6 +97,9 @@ func New(conf *config.Config, log *slog.Logger, handler Handler) (*Server, error
 			})
 			v1.Route("/orders", func(r chi.Router) {
 				r.Get("/{orderStatusId}", order.SearchStatus(log, handler))
+			})
+			v1.Route("/payments", func(r chi.Router) {
+				r.Get("/", payment.List(log, handler))
 			})
 			v1.Route("/fetch", func(r chi.Router) {
 				r.Post("/", fetch.ReadData(log, handler))

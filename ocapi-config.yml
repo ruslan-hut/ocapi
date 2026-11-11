@@ -25,3 +25,11 @@ telegram:
 product:
   custom_fields:
     - is_new
+# payment facts written by wfsync into custom oc_order columns (darkbyrior.com)
+order_payment:
+  status_field: wf_payment_status
+  id_field: wf_payment_id
+  amount_field: wf_payment_amount
+  amount_minor_units: true
+  time_field: wf_payment_time
+  time_location: UTC

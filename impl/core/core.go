@@ -35,6 +35,9 @@ type Repository interface {
 	OrderProducts(orderId int64) ([]*entity.ProductOrder, error)
 	OrderTotals(orderId int64) ([]*entity.OrderTotal, error)
 	UpdateOrderStatus(orderId int64, statusId int, comment string) error
+	OrderPayment(orderId int64) (*entity.OrderPayment, error)
+	OrderPayments(from time.Time, afterId int64, statuses []string, limit int) ([]*entity.OrderPayment, error)
+	PaymentsListEnabled() bool
 
 	UpdateCurrencyValue(currencyCode string, value float64) error
 

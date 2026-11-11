@@ -144,6 +144,7 @@ func (s *MySql) stmtSelectOrderStatus() (*sql.Stmt, error) {
 			order_id
 		 FROM %sorder
 		 WHERE order_status_id = ? AND date_modified  > ?
+		 ORDER BY date_modified DESC, order_id DESC
 		 LIMIT 100`,
 		s.prefix,
 	)

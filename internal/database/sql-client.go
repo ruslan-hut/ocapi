@@ -22,6 +22,7 @@ type MySql struct {
 	statements   map[string]*sql.Stmt
 	mu           sync.Mutex
 	customFields map[string]bool // allowed custom field names for products
+	payment      *orderPayment   // nil unless order_payment is configured and valid
 }
 
 // NewSQLClient creates a new MySQL client, establishes the connection, configures the pool,
@@ -1602,7 +1603,8 @@ func (s *MySql) OrderSearchId(orderId int64) (*entity.Order, error) {
 	return &order, nil
 }
 
-// OrderSearchStatus returns a list of order IDs matching the given status and created after the specified time.
+// OrderSearchStatus returns up to 100 order IDs with the given current status whose
+// date_modified is after the specified time, most recently modified first.
 func (s *MySql) OrderSearchStatus(statusId int64, from time.Time) ([]int64, error) {
 	stmt, err := s.stmtSelectOrderStatus()
 	if err != nil {

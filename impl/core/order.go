@@ -34,6 +34,13 @@ func (c *Core) OrderSearch(id int64) (*entity.Order, error) {
 		order.Totals = totals
 	}
 
+	payment, err := c.repo.OrderPayment(id)
+	if err != nil {
+		c.log.Warn("failed to fetch order payment", slog.Int64("order_id", id), sl.Err(err))
+	} else {
+		order.Payment = payment
+	}
+
 	return order, nil
 }
 

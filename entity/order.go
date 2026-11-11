@@ -66,4 +66,5 @@ type Order struct {
 	DateModified          time.Time       `json:"date_modified"`
 	Products              []*ProductOrder `json:"products,omitempty"`
 	Totals                []*OrderTotal   `json:"totals,omitempty"`
+	Payment               *OrderPayment   `json:"payment,omitempty"` // only when order_payment is configured
 }

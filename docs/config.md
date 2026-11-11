@@ -30,6 +30,15 @@ images:
 ## OpenCart file cache
 cache:
   path: /var/www/site/system/storage/cache/ # DIR_CACHE of the site; empty disables cache clearing
+## Order payment data (optional)
+order_payment:
+  status_field: payment_status  # column with the payment status, e.g. "paid"
+  id_field: payment_id          # column with the provider payment id
+  amount_field: payment_amount  # column with the paid amount
+  amount_minor_units: true      # amount column holds minor units (cents)
+  currency_field: ""            # column with the ISO currency code of the amount
+  time_field: payment_time      # DATETIME column: when the status was reached
+  time_location: UTC            # IANA zone of time_field values (default UTC)
 ## Product settings
 product:
   custom_fields:         # Additional allowed custom field names (beyond defaults)
@@ -53,3 +62,18 @@ Database sessions use `sql_mode = 'NO_ZERO_IN_DATE,NO_ENGINE_SUBSTITUTION'`, as 
 
 ### Cache
 After `product/special/sync` the service removes OpenCart file cache entries with product prices (`cache.product.*`, `cache.catproductany.*`, `cache.upstore_productcategorytabs*`, `cache.theme*`) from `cache.path`.
+
+### Order Payment Data
+OpenCart has no payment columns in `order`. A payment integration may add its own
+(for example wfsync writes `wf_payment_*`); the `order_payment` block maps them so ocapi
+can expose them without depending on any particular integration.
+
+- No block (or all names empty): behaviour is plain OpenCart — orders have no `payment`
+  object and `GET /api/v1/payments` answers `501`.
+- Every name is optional. Only configured fields are returned; an empty column value is
+  returned as `null`. `GET /api/v1/payments` needs `time_field`.
+- Names must be plain identifiers and must exist in `<prefix>order` of the configured
+  database. Any invalid entry (or an unknown `time_location`) disables the whole block
+  with an error in the log; the service still starts.
+- `amount` is returned in major units (`amount_minor_units: true` divides by 100).
+- Times are read as wall clock of `time_location` and returned in RFC 3339.
